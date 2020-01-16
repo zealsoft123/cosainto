@@ -1,0 +1,40 @@
+// Body
+$body-bg: #f8fafc;
+
+// Typography
+$font-family-sans-serif: 'Avenir Next', sans-serif;
+$headings-font-family: 'CircularStd';
+$btn-font-family: 'CircularStd';
+$btn-font-weight: bold;
+$font-size-base: 0.9rem;
+$line-height-base: 1.6;
+
+// Colors
+$blue: #3490dc;
+$indigo: #6574cd;
+$purple: #9561e2;
+$pink: #f66d9b;
+$red: #e3342f;
+$orange: #f6993f;
+$yellow: #ffed4a;
+$green: #38c172;
+$teal: #38a99d;
+$cyan: #6cb2eb;
+
+$cosainto-gradient-left: #78d570;
+$cosainto-gradient-right: #35a6a0;
+$mint: #f1fff6;
+$black: #000000;
+$dark-grey: #4a4a4a;
+$light-grey: #999999;
+$off-white: #f7f7f7;
+$white: #ffffff;
+
+$primary:       $teal !default;
+$secondary:     $light-grey !default;
+// $success:       $green !default;
+// $info:          $cyan !default;
+// $warning:       $yellow !default;
+// $danger:        $red !default;
+// $light:         $gray-100 !default;
+// $dark:          $gray-800 !default;

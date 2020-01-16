@@ -1,0 +1,32 @@
+#!/bin/bash
+
+
+echo "Starting python script..."
+python3 ingest.py
+echo "Python script complete..."
+
+# Create a new SQL user and a new SQL database
+cd ~/Homestead
+echo "Starting transaction data import"
+vagrant ssh > /dev/null 2>&1 << EOF
+
+cd code/cosainto/data-ingestion
+
+# TODO: Create a special user/database pair for just this import for security reasons
+
+mysql -u homestead -psecret cosainto_data < out.sql
+
+EOF
+echo "Transaction data import complete..."
+
+# Run the model against that DB
+echo "Starting transaction analysis..."
+
+# Observe the output
+
+echo "Transaction analysis complete..."
+
+# Clean up database
+echo "Starting database cleanup..."
+echo "Database cleanup complete..."
+
