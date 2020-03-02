@@ -1,0 +1,14 @@
+name: CI
+on: [push]
+ 
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Deploy to coasainto.ap.dev
+      uses: appleboy/ssh-action@master
+      env:
+        USERNAME: root
+        HOST: 157.230.58.171
+        SCRIPT: ~/deploy.sh
+        KEY: ${{ secrets.SSH_DEPLOYMENT_KEY }}
