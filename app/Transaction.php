@@ -36,6 +36,7 @@ class Transaction extends Model
     'investigation_summary',
     'notes',
     'transaction_date',
+    'card_type'
   ];
 
   /**

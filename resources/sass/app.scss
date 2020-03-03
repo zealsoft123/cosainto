@@ -291,3 +291,263 @@ input#transactions {
         margin-bottom: 0;
     }
 }
+
+// Stripe payment styling
+#payment-form {
+  background-color: #fff;
+  padding-top: 20px;
+  padding-bottom: 20px;
+
+  label {
+    text-align: left;
+  }
+}
+
+#payment-form * {
+  font-family: CircularStd, monospace;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+#payment-form .row {
+  display: -ms-flexbox;
+  display: flex;
+  margin: 0 5px 10px;
+  margin-bottom: 20px;
+}
+
+#payment-form .field {
+  position: relative;
+  width: 100%;
+  height: 50px;
+  margin: 0 10px;
+}
+
+#payment-form .field.half-width {
+  width: 50%;
+}
+
+#payment-form .field.quarter-width {
+  width: calc(20% - 10px);
+}
+
+#payment-form .baseline {
+  position: absolute;
+  width: 100%;
+  height: 1px;
+  left: 0;
+  bottom: 0;
+  background-color: #cfd7df;
+  transition: background-color 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+#payment-form label {
+  position: absolute;
+  width: 100%;
+  left: 0;
+  bottom: 8px;
+  color: #cfd7df;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  transform-origin: 0 50%;
+  cursor: text;
+  pointer-events: none;
+  transition-property: color, transform;
+  transition-duration: 0.3s;
+  transition-timing-function: cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+#payment-form .input {
+  position: absolute;
+  width: 100%;
+  left: 0;
+  bottom: 0;
+  padding-bottom: 7px;
+  color: #32325d;
+  background-color: transparent;
+}
+
+#payment-form .input::-webkit-input-placeholder {
+  color: transparent;
+  transition: color 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+#payment-form .input::-moz-placeholder {
+  color: transparent;
+  transition: color 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+#payment-form .input:-ms-input-placeholder {
+  color: transparent;
+  transition: color 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+}
+
+#payment-form .input.StripeElement {
+  opacity: 0;
+  transition: opacity 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+  will-change: opacity;
+}
+
+#payment-form .input.focused,
+#payment-form .input:not(.empty) {
+  opacity: 1;
+}
+
+#payment-form .input.focused::-webkit-input-placeholder,
+#payment-form .input:not(.empty)::-webkit-input-placeholder {
+  color: #cfd7df;
+}
+
+#payment-form .input.focused::-moz-placeholder,
+#payment-form .input:not(.empty)::-moz-placeholder {
+  color: #cfd7df;
+}
+
+#payment-form .input.focused:-ms-input-placeholder,
+#payment-form .input:not(.empty):-ms-input-placeholder {
+  color: #cfd7df;
+}
+
+#payment-form .input.focused + label,
+#payment-form .input:not(.empty) + label {
+  color: #aab7c4;
+  transform: scale(0.85) translateY(-25px);
+  cursor: default;
+}
+
+#payment-form .input.focused + label {
+  color: #24b47e;
+}
+
+#payment-form .input.invalid + label {
+  color: #ffa27b;
+}
+
+#payment-form .input.focused + label + .baseline {
+  background-color: #24b47e;
+}
+
+#payment-form .input.focused.invalid + label + .baseline {
+  background-color: #e25950;
+}
+
+#payment-form input, #payment-form button {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  outline: none;
+  border-style: none;
+}
+
+#payment-form input:-webkit-autofill {
+  -webkit-text-fill-color: #e39f48;
+  transition: background-color 100000000s;
+  -webkit-animation: 1ms void-animation-out;
+}
+
+#payment-form .StripeElement--webkit-autofill {
+  background: transparent !important;
+}
+
+#payment-form input, #payment-form button {
+  -webkit-animation: 1ms void-animation-out;
+}
+
+#payment-form button {
+  display: block;
+  width: calc(100% - 30px);
+  height: 40px;
+  margin: 40px 15px 0;
+  background-color: #24b47e;
+  border-radius: 4px;
+  color: #fff;
+  text-transform: uppercase;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+#payment-form .error svg {
+  margin-top: 0 !important;
+}
+
+#payment-form .error svg .base {
+  fill: #e25950;
+}
+
+#payment-form .error svg .glyph {
+  fill: #fff;
+}
+
+#payment-form .error .message {
+  color: #e25950;
+}
+
+#payment-form .success .icon .border {
+  stroke: #abe9d2;
+}
+
+#payment-form .success .icon .checkmark {
+  stroke: #24b47e;
+}
+
+#payment-form .success .title {
+  color: #32325d;
+  font-size: 16px !important;
+}
+
+#payment-form .success .message {
+  color: #8898aa;
+  font-size: 13px !important;
+}
+
+#payment-form .success .reset path {
+  fill: #24b47e;
+}
+
+.disclaimer {
+  font-size: 14px !important;
+}
+
+.StripeElement {
+    box-sizing: border-box;
+    height: 40px;
+    padding: 10px 12px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    background-color: white;
+    box-shadow: 0 1px 3px 0 #e6ebf1;
+    -webkit-transition: box-shadow 150ms ease;
+    transition: box-shadow 150ms ease;
+  }
+  .StripeElement--focus {
+    box-shadow: 0 1px 3px 0 #cfd7df;
+  }
+  .StripeElement--invalid {
+    border-color: #fa755a;
+  }
+  .StripeElement--webkit-autofill {
+    background-color: #fefde5 !important;
+  }
+
+.transaction-notes {
+  textarea {
+    width: 100%;
+  }
+
+  button {
+    width: 100%;
+  }
+}
+
+.doc-upload {
+  max-width: 300px;
+}
+
+.mdi-close {
+  text-decoration: underline;
+}
+
+.transaction-docs {
+  display: inline-block;
+}

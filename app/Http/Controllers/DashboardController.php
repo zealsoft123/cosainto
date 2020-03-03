@@ -15,7 +15,7 @@ use App\Jobs\ProcessCSV;
 use Auth;
 use Redirect;
 
-
+use App\Http\Controllers\SalesforceController;
 
 class DashboardController extends Controller {
   /**
@@ -33,7 +33,6 @@ class DashboardController extends Controller {
    * @return \Illuminate\Contracts\Support\Renderable
    */
   public function index() {
-
     return view( 'dashboard', $this->getDashboardData());
   }
 
@@ -70,7 +69,8 @@ class DashboardController extends Controller {
       'sales_volume'      => $this->getSalesVolume( $organization ),
       'chargeback_ratio'  => count( $transactions ) !== 0 ? $this->getChargebacks( $organization ) / count( $transactions ) : 'N/A' ,
       'total_declines'    => $this->getDeclines( $organization ),
-      'transaction_hash'  => TransactionController::hash()
+      'inprogress_cases'  => $transactions->filter(function($tx){return 'pending' == $tx->review_status; })->count(),
+      'completed_cases'   => $transactions->filter(function($tx){return 'completed' == $tx->review_status; })->count()
     ];
   }
 

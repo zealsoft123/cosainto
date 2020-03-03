@@ -5,17 +5,21 @@ $(document).ready(function(){
 		$('button.upload-csv').click();
 	});
 
+	$('input#document').change(function( e ){
+		$('button.upload-document').click();
+	});
+
 	if( window.location.href.indexOf('dashboard') > -1 ) {
 		setInterval(function(){
-			$.get("/transaction/hash", function( data ){
-				var current_hash = $('table.transactions').data('transactions-hash');
-
-				if( current_hash !== data.trim() ) {
+			$.get("/transaction/last_updated", function( data ){
+				if( data.trim() != 'false' ) {
 					$('.alert.additional-data').show();
 				}
 			});
-		}, 1000);
+		}, 5000);
 	}
 
-	new Tablesort(document.querySelector('table.transactions'));
+	if(document.querySelector('table.transactions')){
+		new Tablesort(document.querySelector('table.transactions'));
+	}
 });

@@ -23,6 +23,7 @@
         "vue-template-compiler": "^2.6.10"
     },
     "dependencies": {
+        "@mdi/font": "^4.9.95",
         "tablesort": "^5.1.0"
     }
 }

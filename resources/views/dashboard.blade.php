@@ -3,6 +3,11 @@
 {{-- $transactions passed in: collection of all transactions for user's organization --}}
 
 @section('content')
+
+<?php
+// \App\Http\Controllers\TransactionController::sql_split( base_path( 'data-ingestion/ingest.sql' ) );
+?>
+
 <div class="container py-4">
     <div class="row">
       <div class="col">
@@ -53,23 +58,18 @@
             <div class="row no-gutters">
               <div class="col-auto px-3">
                 <span class="clearfix font-weight-bold">Total Flagged Transactions</span>
-                <span class="clearfix font-italic">3&#37; of Total</span>
-                <span class="font-weight-bold dashboard-stats">26</span>
+                <span class="clearfix font-italic">N/A&#37; of Total</span>
+                <span class="font-weight-bold dashboard-stats">N/A</span>
               </div>
               <div class="col-auto px-3">
                 <span class="clearfix font-weight-bold">Cases in Review</span>
                 <span class="clearfix font-italic">In Progress Cases</span>
-                <span class="font-weight-bold dashboard-stats">18</span>
-              </div>
-              <div class="col-auto px-3">
-                <span class="clearfix font-weight-bold">New Cases Requested</span>
-                <span class="clearfix font-italic">In our Queue</span>
-                <span class="font-weight-bold dashboard-stats">2</span>
+                <span class="font-weight-bold dashboard-stats">{{ $inprogress_cases }}</span>
               </div>
               <div class="col-auto px-3">
                 <span class="clearfix font-weight-bold">Completed Cases</span>
                 <span class="clearfix font-italic">In our Queue</span>
-                <span class="font-weight-bold dashboard-stats">2930</span>
+                <span class="font-weight-bold dashboard-stats">{{ $completed_cases }}</span>
 
               </div>
             </div>
@@ -83,7 +83,7 @@
         </div>
 
         <div class="table-responsive">
-          <table class="table table-striped table-hover transactions" data-transactions-hash="{{ $transaction_hash }}">
+          <table class="table table-striped table-hover transactions">
             <thead class="thead-light">
               <tr>
                 <th scope="col">Transaction ID</th>
@@ -103,9 +103,15 @@
                   <td>{{ ucwords( str_replace( '_', ' ', $transaction->transaction_status ) ) }}</td>
                   <td>{{ ucwords( $transaction->transaction_type ) }}</td>
                   <td>${{ number_format( $transaction->amount, 2, '.', ',' ) }}</td>
-                  <td>{{ $transaction->risk_score }}</td>
-                  <td>{{ $transaction->risk_reason }}</td>
-                  <td><a href="/transaction/{{ $transaction->id }}">Request Review</a></td>
+                  <td>{{ $transaction->risk_score ?? 'Pending' }}</td>
+                  <td>{{ $transaction->risk_reason ?? 'Pending' }}</td>
+                  @if( 'not_started' == $transaction->review_status )
+                    <td><a href="/transaction/{{ $transaction->id }}">Request Review</a></td>
+                  @elseif( 'pending' == $transaction->review_status )
+                    <td><a href="/transaction/{{ $transaction->id }}">Review In Progress</a></td>
+                    @elseif( 'completed' == $transaction->review_status )
+                    <td><a href="/transaction/{{ $transaction->id }}">Review Completed</a></td>
+                  @endif
                   <td>{{ $transaction->transaction_date->toFormattedDateString() }}</td>
                 </tr>
               @endforeach
