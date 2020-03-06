@@ -4,10 +4,6 @@
 
 @section('content')
 
-<?php
-// \App\Http\Controllers\TransactionController::sql_split( base_path( 'data-ingestion/ingest.sql' ) );
-?>
-
 <div class="container py-4">
     <div class="row">
       <div class="col">

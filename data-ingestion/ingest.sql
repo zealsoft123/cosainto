@@ -233,7 +233,7 @@ create table cos_past_2wk_txn as
         max(max_sttlmnt_amt) as max_2wk_sttlmnt_amt,
         min(min_sttlmnt_amt) as min_2wk_sttlmnt_amt
     from cos_merch_base_settled_txns
-    where sttlmnt_dt between current_date-14 and current_date-1    
+    where sttlmnt_dt between subdate(current_date, 14) and subdate(current_date, 1)    
 	group by 1,2
 );
 

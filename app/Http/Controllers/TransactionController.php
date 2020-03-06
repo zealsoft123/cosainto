@@ -63,7 +63,6 @@ class TransactionController extends Controller {
    * @return \Illuminate\Http\Response
    */
   public function show($transactionID) {
-    dd($transactionID);
     $transaction = Transaction::findOrFail($transactionID);
     $organization = Organization::findOrFail($transaction->organization_id);
 
@@ -155,7 +154,7 @@ class TransactionController extends Controller {
    */
   public static function last_updated() {
     $transactions = Transaction::where('organization_id', Auth::User()->organization)
-                                ->where('updated_at', '>=', Carbon::now()->subMinute()->toDateTimeString())
+                                ->where('updated_at', '>=', Carbon::now()->subSeconds(30)->toDateTimeString())
                                 ->whereRaw('updated_at != created_at')
                                 ->get();
 

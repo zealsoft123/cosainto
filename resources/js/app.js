@@ -16,7 +16,7 @@ $(document).ready(function(){
 					$('.alert.additional-data').show();
 				}
 			});
-		}, 5000);
+		}, 31000);
 	}
 
 	if(document.querySelector('table.transactions')){
