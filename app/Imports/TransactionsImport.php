@@ -37,7 +37,10 @@ class TransactionsImport implements ToModel, withHeadingRow {
       'Dec'
     ];
 
-    $expiration_date = $row['expiration_date'];
+    $expiration_date = false;
+    if( array_key_exists('expiration_date', $row) ) {
+      $expiration_date = $row['expiration_date'];
+    }
     if( !$expiration_date && array_key_exists( 'card_exp_year', $row ) ) {
       $expiration_date = substr( $row['card_exp_year'], 2 ) . '-' . $month_strings[ $row['card_exp_month'] ]; 
     }
@@ -45,7 +48,10 @@ class TransactionsImport implements ToModel, withHeadingRow {
       $expiration_date = '';
     }
 
-    $billing_address = $row['billing_street_address'];
+    $billing_address = false;
+    if( array_key_exists('billing_street_address', $row) ) {
+      $billing_address = $row['billing_street_address'];
+    }
 
     if( !$billing_address && array_key_exists( 'card_address_line1', $row ) ) {
       $billing_address = $row['card_address_line1'] . ' ' . $row['card_address_line2'];
@@ -54,7 +60,10 @@ class TransactionsImport implements ToModel, withHeadingRow {
       $billing_address = '';
     }
 
-    $billing_city = $row['billing_city_locality'];
+    $billing_city = false;
+    if( array_key_exists('billing_city_locality', $row) ) {
+      $billing_city = $row['billing_street_locality'];
+    }
 
     if( !$billing_city && array_key_exists( 'card_address_city', $row ) ) {
       $billing_city = $row['card_address_city'];
@@ -63,7 +72,10 @@ class TransactionsImport implements ToModel, withHeadingRow {
       $billing_city = '';
     }
 
-    $billing_state = $row['billing_stateprovince_region'];
+    $billing_state = false;
+    if( array_key_exists('billing_stateprovince_region', $row) ) {
+      $billing_state = $row['billing_stateprovince_region'];
+    }
 
     if( !$billing_state && array_key_exists( 'card_address_state', $row ) ) {
       $billing_state = $row['card_address_state'];
@@ -94,7 +106,7 @@ class TransactionsImport implements ToModel, withHeadingRow {
       'shipping_country'   => $row['shipping_country'] ?? '',
       'transaction_date'   => array_key_exists( 'created_datetime', $row ) ? Carbon::parse($row['created_datetime'])->toDateTimeString() : Carbon::parse($row['created_utc'])->toDateTimeString(),
       'merchant_id'        => $row['merchant_id'] ?? '',
-      'card_type'          => $row['card_type']
+      'card_type'          => $row['card_type'] ?? $row['card_brand']
     ]);
   }
 }
