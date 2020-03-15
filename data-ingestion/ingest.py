@@ -8,7 +8,8 @@ import xlrd
 pd.set_option('display.max_columns', None)
 
 ### reading the file 
-file = pd.read_excel('data.xlsx',error_bad_lines=False)
+#file = pd.read_excel('data.xlsx',error_bad_lines=False)
+file = pd.read_csv('data.csv',error_bad_lines=False)
 
 def braintree_file(df):
 	### getting the required columns
