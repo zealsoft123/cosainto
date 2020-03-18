@@ -269,6 +269,8 @@ class TransactionController extends Controller {
       }
     }
 
+    return;
+
     // Tear down all the tables
     $colname = 'Tables_in_' . env('DB_DATABASE_SECOND');
     $tables = DB::connection('mysql2')->select('SHOW TABLES');
