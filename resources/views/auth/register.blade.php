@@ -130,7 +130,7 @@
 
                     <div class="col-md-6">
                       <div class="form-check">
-                        <input class="form-check-input" type="radio" name="category" id="tangibleProduct" value="tangibleProduct" >
+                        <input class="form-check-input" type="radio" name="category" id="tangibleProduct" value="tangibleProduct" required>
                         <label class="form-check-label" for="tangibleProduct">
                           Tangible Product is Provided
                         </label>
