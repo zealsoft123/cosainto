@@ -44,14 +44,11 @@ class DashboardController extends Controller {
    */
   public function uploadTransactions(Request $request) {
     $request->validate(['transactions' => 'mimes:csv,txt']);
-    $updated_data = $this->getDashboardData();
 
-    $headings = (new HeadingRowImport)->toArray(request()->file('transactions'));
-
-    $path = $request->file('transactions')->store('temp');
-    Excel::import(new TransactionsImport, request()->file('transactions'));
-
+    $path = $request->file('transactions')->storeAs('temp', 'data.csv', 'local');
     ProcessCSV::dispatch($path);
+
+    $updated_data = $this->getDashboardData();
 
     return Redirect::route('dashboard', [ 'updated_data' => $updated_data ] );
   }

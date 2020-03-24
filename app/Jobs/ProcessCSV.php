@@ -38,32 +38,10 @@ class ProcessCSV implements ShouldQueue
      * @return void
      */
     public function handle()
-    {
-        $user = Auth::User();
-        $organization = Organization::findOrFail($user->organization);
+    {   
+        $path = storage_path('app/') . $this->filepath;
+        $contents = file_get_contents($path);
 
-        $organization->last_uploaded = Carbon::now();
-        $organization->save();
-
-        $tx_table = "tx_data_" . md5( time() . $user->id . $user->organization );
-
-        Schema::create( $tx_table, function (Blueprint $table) {
-            $table->bigIncrements('id');
-        });
-
-        // Create a custom database table for this upload
-        
-        // Import each transaction into the base custom table
-
-        // Grab all the SQL that needs to be run against the transactions
-
-        // Find/replace the base table name to the specifically generated table name
-
-        // Append the hash to all the table names in the sql statement so that each import is separated
-
-        // Destroy the custom database table for this upload
-        Schema::drop( $tx_table );
-
-        Storage::delete($this->filepath);
+        file_put_contents(base_path('data-ingestion') . '/data.csv', $contents);
     }
 }
