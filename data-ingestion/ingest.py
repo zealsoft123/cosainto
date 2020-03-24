@@ -83,3 +83,4 @@ updated_file = braintree_file(file)
 
 ### calling the function to generate insert statement for the file
 load_statement(updated_file)
+print 'success'

@@ -43,5 +43,14 @@ class ProcessCSV implements ShouldQueue
         $contents = file_get_contents($path);
 
         file_put_contents(base_path('data-ingestion') . '/data.csv', $contents);
+
+        $output = shell_exec("cd " . base_path('data-ingestion') . " && python ingest.py 2>&1");
+
+        if( strpos($output, 'success') !== false ) {
+            // Python script worked
+        }
+        else {
+            // Python script didn't work and there's some sort of error
+        }
     }
 }
