@@ -4,83 +4,102 @@ import matplotlib.pyplot as plt
 import os
 import re
 import xlrd
-
 pd.set_option('display.max_columns', None)
 
-### reading the file 
-#file = pd.read_excel('data.xlsx',error_bad_lines=False)
-file = pd.read_csv('data.csv',error_bad_lines=False)
+## suiting based on file needs
+file_name = 'data.csv'
+FileType  = str.rsplit(file_name,'.',1)[1]
 
-def braintree_file(df):
-	### getting the required columns
-	col_req = ['Transaction ID','Transaction Type','Transaction Status','Settlement Date','Disbursement Date'
-			   ,'Amount Authorized','Settlement Amount','Refunded Transaction ID'
-			   ,'Payment Instrument Type','Card Type','Credit Card Number'
-			   ,'Billing Postal Code','Billing Country','Shipping Postal Code','Shipping Country'
-			   ,'IP Address','Processor Response Code','Settlement Currency ISO Code']
-	df = df[col_req]
-	
-	### renaming the required columns
-	col_rename = ['Txn_Id','Txn_Type','Txn_Status','Sttlmnt_Dt','Disbursement_Dt'
-				  ,'Auth_Amt','Settled_Amt','Refund_Txn_Id'
-				  ,'Payment_Type','Card_Type','CC_Number'
-				  ,'Billing_Postal_Code','Billing_Country','Shipping_Postal_Code','Shipping_Country'
-				  ,'IP_Addr','Processor_Response_Code','Settlement_Currency']
-	df.columns = col_rename
-	
-	### function to generate insert statements
-	#load_statement(df)
-	return df
 
-def load_statement(modif_df):
-	for index,row in modif_df.iterrows():
-		# Make sure all "NaN"s and "NaT"s are wrapped in quotes
-		values = str(tuple(row.values))
+if FileType == 'xlsx':
+    file = pd.read_excel(file_name,error_bad_lines=False)
+else:
+    file = pd.read_csv(file_name,error_bad_lines=False)
 
-		# Don't append any empty rows to the dataset
-		if "numpy.datetime64('NaT')" in values:
-			continue
+### passing the file type flow
+def stripe_file_conversion(file):
+    
+    col_req = ['id','Description','Mode','Created (UTC)'
+               ,'Amount','Converted Amount','Amount Refunded'
+               ,'Card Funding','Card Brand','Card Last4'
+               ,'Card Address Zip', 'Card Address Country','Destination','Destination'
+               ,'Card Exp Year','Status','Converted Currency'
+              ]
 
-		values = values.replace( 'NaT', 'null')
-		values = values.replace( 'nan', '\'\'')
 
-		sql_state.append('INSERT INTO '+table+' ('+ str(', '.join(modif_df.columns))+ ') VALUES ' + values)
+    data = file[col_req] 
 
-	# Add create table statement
-	table_setup = "DROP TABLE IF EXISTS base_table_temp;\
-	CREATE TABLE base_table_temp(\
-		Txn_Id VARCHAR(24),\
-		Txn_Type VARCHAR(24),\
-		Txn_Status VARCHAR(24), \
-		Sttlmnt_Dt DATETIME NULL,\
-		Disbursement_Dt DATETIME,\
-		Auth_Amt FLOAT,\
-		Settled_Amt FLOAT,\
-		Refund_Txn_Id VARCHAR(24),\
-		Payment_Type VARCHAR(24),\
-		Card_Type VARCHAR(24),\
-		CC_Number VARCHAR(24),\
-		Billing_Postal_Code VARCHAR(24),\
-		Billing_Country VARCHAR(24),\
-		Shipping_Postal_Code VARCHAR(24),\
-		Shipping_Country VARCHAR(24),\
-		IP_Addr VARCHAR(24),\
-		Processor_Response_Code FLOAT,\
-		Settlement_Currency VARCHAR(24),\
-		PRIMARY KEY ( Txn_Id )\
-	)\
-	"
+    col_rename = ['Txn_Id','Txn_Type','Txn_Status','Sttlmnt_Dt'
+                  ,'Auth_Amt','Settled_Amt','Refund_Txn_Id'
+                  ,'Payment_Type','Card_Type','CC_Number'
+                  ,'Billing_Postal_Code','Billing_Country','Shipping_Postal_Code','Shipping_Country'
+                  ,'IP_Addr','Processor_Response_Code','Settlement_Currency']
+    
+    data.columns = col_rename
 
-	sql_state.insert(0, table_setup)
+    cat_cols = [x for x in data.dtypes.index if data.dtypes[x] =='object']
+    date_cols = [x for x in data.dtypes.index if data.dtypes[x] =='datetime64[ns]']
+    float_cols = [x for x in data.dtypes.index if data.dtypes[x] =='float64']
 
-	out_file = open( 'out.sql', 'w' )
-	out_file.write( ';\n'.join( sql_state ) )
+    data[cat_cols] = data[cat_cols].fillna('NA')
+    data[date_cols] = data[date_cols].fillna('9999-12-31')
+    data[float_cols] = data[float_cols].fillna('')
 
-### calling the function to transform the file
-sql_state=[]
-table ='base_table_temp'
-updated_file = braintree_file(file)
+    sql_state=[]
+    table ='base_table_temp'
 
-### calling the function to generate insert statement for the file
-load_statement(updated_file)
-print 'success'
+    for index,row in data.iterrows():
+        #sql_state.append('INSERT INTO '+table+' ('+ str(', '.join(modif_df.columns))+ ') VALUES ' + str(tuple(row.values)))
+        sql_state.append('INSERT INTO '+table+ ' VALUES' + str(tuple(row.values))+';')
+    #pd.DataFrame(sql_state).to_csv('insert_file_statement.csv')
+
+    pd.DataFrame(sql_state).to_csv('insert_file_statement.csv')
+
+### passing the file type flow
+def braintree_file_conversion(file):
+    
+    ### [BRAINTREE PROCESSING] required columns
+    col_req = ['Transaction ID','Transaction Type','Transaction Status','Settlement Date'
+               ,'Amount Authorized','Settlement Amount','Refunded Transaction ID'
+               ,'Payment Instrument Type','Card Type','Credit Card Number'
+               ,'Billing Postal Code','Billing Country','Shipping Postal Code','Shipping Country'
+               ,'IP Address','Processor Response Code','Settlement Currency ISO Code']
+    data = file[col_req]
+
+    col_rename = ['Txn_Id','Txn_Type','Txn_Status','Sttlmnt_Dt'
+                  ,'Auth_Amt','Settled_Amt','Refund_Txn_Id'
+                  ,'Payment_Type','Card_Type','CC_Number'
+                  ,'Billing_Postal_Code','Billing_Country','Shipping_Postal_Code','Shipping_Country'
+                  ,'IP_Addr','Processor_Response_Code','Settlement_Currency']
+    data.columns = col_rename
+
+    cat_cols = [x for x in data.dtypes.index if data.dtypes[x] =='object']
+    date_cols = [x for x in data.dtypes.index if data.dtypes[x] =='datetime64[ns]']
+    float_cols = [x for x in data.dtypes.index if data.dtypes[x] =='float64']
+
+    data[cat_cols] = data[cat_cols].fillna('NA')
+    data[date_cols] = data[date_cols].fillna('9999-12-31')
+    data[float_cols] = data[float_cols].fillna('')
+
+    sql_state=[]
+    table ='base_table_temp'
+
+    for index,row in data.iterrows():
+        #sql_state.append('INSERT INTO '+table+' ('+ str(', '.join(modif_df.columns))+ ') VALUES ' + str(tuple(row.values)))
+        sql_state.append('INSERT INTO '+table+ ' VALUES' + str(tuple(row.values))+';')
+    #pd.DataFrame(sql_state).to_csv('insert_file_statement.csv')
+
+    pd.DataFrame(sql_state).to_csv('insert_file_statement.csv')
+
+
+### identifying the file type (Braintree or Stripe)
+file_type = ''
+if (file.columns[0]=='Transaction ID'):
+    file_type = 'Braintree'
+    braintree_file_conversion(file)
+elif file.columns[0]=='id':
+    file_type = 'Stripe'
+    stripe_file_conversion(file)
+else:
+    file_type = 'Unknown'
+
