@@ -16,6 +16,8 @@ use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 
+use DB;
+
 class ProcessCSV implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
@@ -48,9 +50,61 @@ class ProcessCSV implements ShouldQueue
 
         if( strpos($output, 'success') !== false ) {
             // Python script worked
+            $queries = $this::sql_split( base_path( 'data-ingestion/out.sql' ) );
+
+            foreach( $queries as $query ) {
+              DB::connection('mysql2')->getPdo()->exec( $query );
+            }
+
+            dd('done');
+            // Grab all the transactions fromm
         }
         else {
+            dd($output);
             // Python script didn't work and there's some sort of error
         }
     }
+
+    public static function sql_split($file, $delimiter = ';') {
+    $queries = [];
+    $filtered_queries = [];
+
+    if (is_file($file) === true)
+    {
+        $file = fopen($file, 'r');
+
+        if (is_resource($file) === true)
+        {
+            $query = array();
+
+            while (feof($file) === false)
+            {
+                $query[] = fgets($file);
+
+                if (preg_match('~' . preg_quote($delimiter, '~') . '\s*$~iS', end($query)) === 1)
+                {
+                    $query = trim(implode('', $query));
+
+                    $queries[] = $query;
+                }
+
+                if (is_string($query) === true)
+                {
+                    $query = array();
+                }
+            }
+        }
+    }
+
+    foreach ($queries as $key => $value) {
+        if (strpos($queries[$key], '-- ') !== 0) {
+            $filtered_queries[] = $value;
+        }
+        elseif( strpos($queries[$key], '---' ) !== 0 ) {
+          $filtered_queries[] = $value;
+        }
+    }
+
+    return $filtered_queries;
+  }
 }

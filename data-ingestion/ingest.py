@@ -47,12 +47,12 @@ def load_statement(modif_df):
 		sql_state.append('INSERT INTO '+table+' ('+ str(', '.join(modif_df.columns))+ ') VALUES ' + values)
 
 	# Add create table statement
-	table_setup = "DROP TABLE IF EXISTS tx_data;\
-	CREATE TABLE tx_data(\
+	table_setup = "DROP TABLE IF EXISTS base_table_temp;\
+	CREATE TABLE base_table_temp(\
 		Txn_Id VARCHAR(24),\
 		Txn_Type VARCHAR(24),\
 		Txn_Status VARCHAR(24), \
-		Sttlmnt_Dt DATETIME,\
+		Sttlmnt_Dt DATETIME NULL,\
 		Disbursement_Dt DATETIME,\
 		Auth_Amt FLOAT,\
 		Settled_Amt FLOAT,\
@@ -78,7 +78,7 @@ def load_statement(modif_df):
 
 ### calling the function to transform the file
 sql_state=[]
-table ='tx_data'
+table ='base_table_temp'
 updated_file = braintree_file(file)
 
 ### calling the function to generate insert statement for the file
