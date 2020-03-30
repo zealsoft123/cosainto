@@ -103,3 +103,5 @@ elif file.columns[0]=='id':
 else:
     file_type = 'Unknown'
 
+print 'success'
+
