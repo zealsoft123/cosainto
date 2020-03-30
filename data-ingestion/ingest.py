@@ -18,7 +18,6 @@ else:
 
 ### passing the file type flow
 def stripe_file_conversion(file):
-    
     col_req = ['id','Description','Mode','Created (UTC)'
                ,'Amount','Converted Amount','Amount Refunded'
                ,'Card Funding','Card Brand','Card Last4'
