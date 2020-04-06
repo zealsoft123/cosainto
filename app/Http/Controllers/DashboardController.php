@@ -43,8 +43,6 @@ class DashboardController extends Controller {
    * @return \Illuminate\Contracts\Support\Renderable
    */
   public function uploadTransactions(Request $request) {
-    $request->validate(['transactions' => 'mimes:csv,txt,xlsx,xls']);
-
     $file = $request->file('transactions');
     $ext = $file->getClientOriginalExtension();
     $file->move(base_path('data-ingestion'), "data.{$ext}");
