@@ -43,7 +43,7 @@ class DashboardController extends Controller {
    * @return \Illuminate\Contracts\Support\Renderable
    */
   public function uploadTransactions(Request $request) {
-    $request->validate(['transactions' => 'mimes:csv,txt']);
+    $request->validate(['transactions' => 'mimes:csv,txt,xlsx,xls']);
 
     $path = $request->file('transactions')->storeAs('temp', 'data.csv', 'local');
     ProcessCSV::dispatch($path);

@@ -7,7 +7,11 @@ import xlrd
 pd.set_option('display.max_columns', None)
 
 ## suiting based on file needs
-file_name = 'bad.xlsx'
+if( os.path.exists("data.csv") ):
+  file_name = 'data.csv'
+else:
+  file_name = 'data.xlsx'
+
 FileType  = str.rsplit(file_name,'.',1)[1]
 
 

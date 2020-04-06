@@ -6,6 +6,7 @@ use Carbon\Carbon;
 
 use Auth;
 use \App\Organization;
+use \App\Transaction;
 
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Bus\Queueable;
@@ -41,8 +42,15 @@ class ProcessCSV implements ShouldQueue
      */
     public function handle()
     {   
+        $user = Auth::User();
+        $organization = Organization::findOrFail($user->organization);
+
         $path = storage_path('app/') . $this->filepath;
+
         $contents = file_get_contents($path);
+
+        // If it's an CSV file, save to data.csv
+        // Otherwise save to data.xlsx
 
         file_put_contents(base_path('data-ingestion') . '/data.csv', $contents);
 
@@ -108,13 +116,62 @@ class ProcessCSV implements ShouldQueue
                 DB::connection('mysql2')->getPdo()->exec( $query );
             }
 
+            // Grab the IDs and scores into an array
+            $txs = DB::connection('mysql2')->table('cos_cons_txn_score')->select('merch_id', 'txn_id', 'risk_score', 'risk_reason')->get();
+
+            $existing_txs = [];
+
+            foreach( $txs as $tx ) {
+                if( in_array($tx->txn_id, $existing_txs) ) {
+                    continue;
+                }
+
+                $tx_data = DB::connection('mysql2')->table('base_table_temp')->where('txn_id', '=', $tx->txn_id)->get();
+
+                // Supplment array with data from `base_table_temp`
+                $new_tx = new Transaction([
+                  'organization_id'    => $organization->id,
+                  'transaction_id'     => $tx_data[0]->txn_id,
+                  'transaction_status' => $tx_data[0]->txn_status,
+                  'transaction_type'   => $tx_data[0]->txn_type,
+                  'amount'             => $tx_data[0]->sttlmnt_amt,
+                  'card_number'        => $tx_data[0]->cc_number,
+                  'expiration_date'    => 'NA',
+                  'billing_name'       => '',
+                  'billing_address'    => '',
+                  'billing_city'       => '',
+                  'billing_zipcode'    => $tx_data[0]->billing_postal_cd,
+                  'billing_state'      => '',
+                  'billing_country'    => $tx_data[0]->billing_country,
+                  'shipping_name'      => '',
+                  'shipping_address'   => '',
+                  'shipping_city'      => '',
+                  'shipping_zipcode'   => $tx_data[0]->shipping_postal_cd,
+                  'shipping_state'     => '',
+                  'shipping_country'   => $tx_data[0]->shipping_country,
+                  'transaction_date'   => $tx_data[0]->sttlmnt_dt,
+                  'merchant_id'        => $tx->merch_id,
+                  'card_type'          => $tx_data[0]->card_type,
+                  'risk_score'         => $tx->risk_score,
+                  'risk_reason'        => $tx->risk_reason,
+                ]);
+
+                // Import into Laravel
+                $new_tx->save();                
+                $existing_txs[] = $tx->txn_id;
+            }
+
+            dd();
+
             return redirect('/dashboard');
-            // Grab all the transactions that have been scored and import them into laravel
         }
         else {
             dd($output);
             // Python script didn't work and there's some sort of error
         }
+
+        unlink(base_path('data-ingestion') . '/data.csv');
+        unlink(base_path('data-ingestion') . '/data.xlsx');
     }
 
     public static function sql_split($file, $delimiter = ';') {
