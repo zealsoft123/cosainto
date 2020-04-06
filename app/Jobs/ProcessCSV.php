@@ -140,8 +140,13 @@ class ProcessCSV implements ShouldQueue
                 $existing_txs[] = $tx->txn_id;
             }
 
-            unlink(base_path('data-ingestion') . '/data.csv');
-            unlink(base_path('data-ingestion') . '/data.xlsx');
+            if( file_exists( unlink(base_path('data-ingestion') . '/data.csv') ) ) {
+                unlink(base_path('data-ingestion') . '/data.csv');
+            }
+
+            if( file_exists( unlink(base_path('data-ingestion') . '/data.xlsx') ) ) {
+                unlink(base_path('data-ingestion') . '/data.xlsx');
+            }
 
             return redirect('/dashboard');
         }
