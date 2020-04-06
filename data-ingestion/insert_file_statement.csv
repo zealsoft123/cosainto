@@ -1,3 +1,0 @@
-,0
-0,"INSERT INTO base_table_temp VALUES('ch_1EcOAmCzCwB24ZnjxJdmusPh', 'testing', 'Test', '5/21/2019 2:57', 11111, 11111, 0, 'credit', 'Visa', 4242, '', 'US', '', '', 2022, 'Paid', 'usd');"
-1,"INSERT INTO base_table_temp VALUES('ch_1EcO90CzCwB24ZnjmfNL95W9', 'test', 'Test', '5/21/2019 2:56', 350, 350, 0, 'credit', 'Visa', 4242, '', 'US', '', '', 2022, 'Paid', 'usd');"
