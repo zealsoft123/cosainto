@@ -45,8 +45,12 @@ class DashboardController extends Controller {
   public function uploadTransactions(Request $request) {
     $request->validate(['transactions' => 'mimes:csv,txt,xlsx,xls']);
 
-    $path = $request->file('transactions')->storeAs('temp', 'data.csv', 'local');
-    ProcessCSV::dispatch($path);
+    $file = $request->file('transactions');
+    $ext = $file->getClientOriginalExtension();
+    $file->move(base_path('data-ingestion'), "data.{$ext}");
+
+    // Save file to proper file path
+    ProcessCSV::dispatch();
 
     $updated_data = $this->getDashboardData();
 

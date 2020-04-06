@@ -23,18 +23,6 @@ class ProcessCSV implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    protected $filepath;
-
-    /**
-     * Create a new job instance.
-     *
-     * @return void
-     */
-    public function __construct( $filepath )
-    {
-        $this->filepath = $filepath;
-    }
-
     /**
      * Execute the job.
      *
@@ -44,15 +32,6 @@ class ProcessCSV implements ShouldQueue
     {   
         $user = Auth::User();
         $organization = Organization::findOrFail($user->organization);
-
-        $path = storage_path('app/') . $this->filepath;
-
-        $contents = file_get_contents($path);
-
-        // If it's an CSV file, save to data.csv
-        // Otherwise save to data.xlsx
-
-        file_put_contents(base_path('data-ingestion') . '/data.csv', $contents);
 
         $output = shell_exec("cd " . base_path('data-ingestion') . " && python ingest.py 2>&1");
 
@@ -161,7 +140,8 @@ class ProcessCSV implements ShouldQueue
                 $existing_txs[] = $tx->txn_id;
             }
 
-            dd();
+            unlink(base_path('data-ingestion') . '/data.csv');
+            unlink(base_path('data-ingestion') . '/data.xlsx');
 
             return redirect('/dashboard');
         }
@@ -169,9 +149,6 @@ class ProcessCSV implements ShouldQueue
             dd($output);
             // Python script didn't work and there's some sort of error
         }
-
-        unlink(base_path('data-ingestion') . '/data.csv');
-        unlink(base_path('data-ingestion') . '/data.xlsx');
     }
 
     public static function sql_split($file, $delimiter = ';') {

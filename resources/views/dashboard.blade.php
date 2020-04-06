@@ -14,7 +14,7 @@
           <form method="POST" action="/dashboard" enctype="multipart/form-data">
             @csrf
             <div class="form-group">
-              <label for="transactions" class="btn btn-primary upload-label">Upload Transactions (CSV)</label>
+              <label for="transactions" class="btn btn-primary upload-label">Upload Transactions (CSV or XLSX)</label>
               <input type="file" class="form-control-file" name="transactions" id="transactions">
             </div>
             <button type="submit" class="btn btn-primary upload-csv">Upload</button>
