@@ -33,7 +33,7 @@ class ProcessCSV implements ShouldQueue
         $user = Auth::User();
         $organization = Organization::findOrFail($user->organization);
 
-        $output = shell_exec("cd " . base_path('data-ingestion') . " && python ingest.py 2>&1");
+        $output = shell_exec("cd " . base_path('data-ingestion') . " && sudo python ingest.py 2>&1");
 
         if( strpos($output, 'success') !== false ) {
             // Python script worked
