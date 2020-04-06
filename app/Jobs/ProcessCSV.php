@@ -55,22 +55,22 @@ class ProcessCSV implements ShouldQueue
             $filtered_queries = [];
             $filtered_queries[] = 'drop table if exists base_table_temp;
             create table base_table_temp (txn_id varchar(40),
-                txn_type varchar(20),
-                txn_status varchar(20),
+                txn_type varchar(40),
+                txn_status varchar(40),
                 sttlmnt_dt DATE ,
                 auth_amt Decimal (7,2),
                 sttlmnt_amt Decimal(7,2),
-                refund_txn_id varchar(20),
-                payment_type varchar(20),
-                card_type varchar(20),
-                cc_number varchar(20),
-                billing_postal_cd varchar(20),
+                refund_txn_id varchar(40),
+                payment_type varchar(40),
+                card_type varchar(40),
+                cc_number varchar(40),
+                billing_postal_cd varchar(40),
                 billing_country varchar(100),
-                shipping_postal_cd varchar(20),
+                shipping_postal_cd varchar(40),
                 shipping_country varchar(100),
-                ip_addr varchar(20),
-                processor_response_code varchar(20),
-                sttlmnt_currency varchar(20)
+                ip_addr varchar(40),
+                processor_response_code varchar(40),
+                sttlmnt_currency varchar(40)
             );';
 
             foreach( $queries as $query ) {
@@ -80,22 +80,25 @@ class ProcessCSV implements ShouldQueue
 
                 $query = explode('"', $query)[1];
 
-                if( strpos( $query, "'NA', 'NA', 'NA', 'NA'") ) {
-                    continue;
-                }
-
                 $filtered_queries[] = $query;
             }
 
-            foreach( $filtered_queries as $query ) {
-                $query = preg_replace_callback( "/'([0-9].*\/[0-9].*\/[0-9].*?)'/", function ($m){
-                    return date("'Y-m-d 00:00:00'", strtotime($m[1]));
+            foreach( $filtered_queries as $query ) {        
+                // Fix python unicode stuff
+                $query = str_replace(", u'", ", '", $query);
+                $query = str_replace("(u'", "('", $query);
+                $query = str_replace("''", "NULL", $query);
+
+                $query = preg_replace_callback('/datetime\.datetime\((.*?)\)/', function($match){
+                    $arr = explode(',', $match[1]);
+
+                    $year  = $arr[0];
+                    $month = sprintf("%02d", $arr[1]);
+                    $day   = sprintf("%02d", $arr[2]);
+
+                    return "Timestamp('{$year}-{$month}-{$day} 00:00:00')";
                 }, $query);
 
-                if( strpos($query, "'', '', '', '', '', ''") !== false ) {
-                    continue;
-                }
-            
                 DB::connection('mysql2')->getPdo()->exec( $query );
             }
 
