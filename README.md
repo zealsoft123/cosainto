@@ -1,49 +1,38 @@
 # Cosainto
 
+Cosainto is a web application platform for score credit card transactions based on risk as well as to track and perform manual investigations against transactions. The funcitonality of the application is split between user-facing functionality and admin-facing functionality.
+
+Users can:
+  - Upload a CSV/XLSX file containing a list of credit card transactions into the application to be displayed in their dashboard and scored by the proprietary Cosainto model.
+  - Sort the transactions on their dashboard by various metrics including transaction type, transaction amount, transactions status or any of the other columns in their dashboard.
+  - Request a manual review by the Cosainto team of any particular transaction that has been imported and scored, along with any manually provided evidence.
+  - Pay for the manual review of a given transaction with a credit card directly on the site.
+  - Receive updates on a manual investigation when Cosainto has completed their review
+  
+Admins can:
+  - View all transactions through an admin interface, including transaction data, any notes about the transaction and any Cosainto-provided notes as a result of a manual investigation
+  - Approve new users to be able to start using the application
+  - Provide users with updates to manual investigations once they have been completed
+  
+## Typical User Flow
+  - A user signs up for the application and provides some personal details as well as some information about their company to allow Cosainto to potentially personalize their experience in the future.
+  - A user is approved by an administrator and can then log in and access their dashboard
+  - A user uploads their first set of transactions in either CSV or XLSX format
+  - This data is fed into the risk scoring model, which runs against all transactions and provides a risk score and risk reason for each
+  - This data is then imported into the user's dashboard and made accessible to them through the web application
+  - A user reviews this data and decides if a manual review of any transactions is necessary.
+  - The user uploads any supporting evidence for a given transaction to support the investigation
+  - The user requests a manual review for Cosainto
+  - The user provides payment for the manual review from right within the app
+  - The user's paymment is processed and their transaction information is sent to the Cosainto Salesforce instance where transactions are manually reviewed by the Cosainto team
+  - The user sees the updates provided by the Cosainto team as a result of the investigation
+
 # How the Model Runs Inside the Web Application
-The model is baked into the application and checks for new transactions every time a user loads their dashboard. The process is as follows:
+For an overview of the model, see the graphic below. Each of these steps is explained in further detail below the graphic.
 
-  - Any transactions without a risk score are pulled into the list of transactions to be scored
-  - The base table is created for where the transactions will be stored before the model is run 
-```
-// Create the base table and base_table_temp
-    $base_query = "drop table if exists base_table_temp;
-    create table base_table_temp (txn_id varchar(40),
-        txn_type varchar(20),
-        txn_status varchar(20),
-        sttlmnt_dt DATE ,
-        auth_amt Decimal (7,2),
-        sttlmnt_amt Decimal(7,2),
-        refund_txn_id varchar(20),
-        payment_type varchar(20),
-        card_type varchar(20),
-        cc_number varchar(20),
-        billing_postal_cd varchar(20),
-        billing_country varchar(100),
-        shipping_postal_cd varchar(20),
-        shipping_country varchar(100),
-        ip_addr varchar(20),
-        processor_response_code varchar(20),
-        sttlmnt_currency varchar(20)
-    );";
-```
-   - `base_table_temp` is populated with the transaction data. Previously this was performed using Python, but to avoid having to have PHP call Python and then run SQL and have a ton of links in the chain, we have brought this into the PHP application.
-```
-$new_query = "INSERT INTO base_table_temp VALUES('$tx->transaction_id', '$tx->transaction_type',
-'$tx->transaction_status', '{$tx->transaction_date->toDateString()}', $amount, $amount, 'NA', 'Credit Card',
-'$tx->card_type', '$tx->card_number', '$billing_zipcode', '$billing_country', '$shipping_zipcode',
-'$shipping_country', 'NA', 1000.0, 'USD');";
+IMAGE GOES HERE
 
-$filtered_queries[] = $new_query;
-```
-   - All the queries from `ingest.sql` are added to the `$filtered_queries` array.
-   - Each of the filtered queries are run in order, to generate all the intermediate database tables necessary to complete the model
-   - The risk score that's calcuated is assigned back to each transaction in the cosainto database.
-   - The tables and the database created for the model are cleaned up and deleted.
-   
-For more information and to inspect the code around how this works, you can look at `TransactionController:172` which is where the `sql_split` function that runs the model starts.
-
-To update the model, modify the `data-ingestion/ingest.sql` file. This can be done in Github and all modifications will be auto-deployed to the staging server 1-2 minutes after commit.
+To update the model, modify the `data-ingestion/ingest.sql` or the `data-investion/ingest.py` file. This can be done in Github and all modifications will be auto-deployed to the staging server 1-2 minutes after commit.
 
 # Deploy
-All commits to the `master` branch are auto-deployed to staging using Github Actions.
+All commits to the `master` branch are auto-deployed to staging ([https://cosainto.ap.dev](https://cosainto.ap.dev)) using Github Actions.
