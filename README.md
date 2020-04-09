@@ -30,7 +30,7 @@ Admins can:
 # How the Model Runs Inside the Web Application
 For an overview of the model, see the graphic below. Each of these steps is explained in further detail below the graphic.
 
-IMAGE GOES HERE
+![An overview of the Cosainto Model](https://github.com/cosainto/cosainto/blob/master/model.png)
 
 To update the model, modify the `data-ingestion/ingest.sql` or the `data-investion/ingest.py` file. This can be done in Github and all modifications will be auto-deployed to the staging server 1-2 minutes after commit.
 
