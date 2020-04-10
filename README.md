@@ -32,6 +32,26 @@ For an overview of the model, see the graphic below. Each of these steps is expl
 
 ![An overview of the Cosainto Model](https://github.com/cosainto/cosainto/blob/master/model.png)
 
+The individual steps in the model are as follows:
+
+### User uploads their data
+A user clicks the 'Upload' button and selects a CSV or XLSX file from their computer. This file is uploaded into temporary storage so that the various pieces of the model can read it.
+
+### Python Script
+Cosainto has provided a python script for cleaning/normalizing the data imported from different payment providers that also helps deal with various edge cases like empty data rows/columns. Once the uploaded data file has been moved into its temporary location, the python script is triggered. This script looks at each piece of data in the provided file and converts them to SQL queries that can then be imported into our model database.
+
+### Data import to MySQL
+Now that the data is normalized and in the form of MySQL statements, it is imported into a temmporary data table in a MySQL database that has been set up for the purpose of running the model.
+
+### Run the model
+After the transactions are imported to MySQL, the Cosainto provided model (in the form of MySQL commands) is run against this newly-imported data. The result of this should be a MySQL table in the temporary database containing a list of the risk scores for each transaction.
+
+### MySQL -> Laravel
+These risk scores and risk reasons from the model are mapped back to the other transaction data that Laravel will store and each transaction is now saved in the Laravel database so that the user can see these transactions in their dashboard as well as trigger manual reviews against them and upload additional investigation documentation.
+
+### Redirect
+Once the import process is complete and all the transactions are successfully stored in Laravel, the user is redirected to their dashboard, where they can see the transactions that have resulted from their data import and the run of the model.
+
 To update the model, modify the `data-ingestion/ingest.sql` or the `data-investion/ingest.py` file. This can be done in Github and all modifications will be auto-deployed to the staging server 1-2 minutes after commit.
 
 # Deploy
