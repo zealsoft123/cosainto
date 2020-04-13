@@ -1,3 +1,30 @@
+drop table if exists base_table_temp;
+create table base_table_temp (
+    txn_id varchar(100),
+    txn_type varchar(20),
+    txn_status varchar(20),
+    sttlmnt_dt DATE ,
+    -- sttlmnt_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ,
+    auth_amt Decimal (7,2),
+    sttlmnt_amt Decimal(7,2),
+    refund_txn_id varchar(20),
+    payment_type varchar(20),
+    card_type varchar(20),
+    cc_number varchar(50),
+    billing_postal_cd varchar(20),
+    billing_country varchar(100),
+    shipping_postal_cd varchar(20),
+    shipping_country varchar(100),
+    ip_addr varchar(20),
+    processor_response_code varchar(20),
+    sttlmnt_currency varchar(20),
+    file_type varchar(20),
+    insert_date DATE,
+    merch_id varchar(20)
+);
+
+
+-- adding merchant ID
 drop table if exists base_table;
 create table base_table as
 (
@@ -23,7 +50,25 @@ select
     from base_table_temp t1
 );
 
+-- INSERT INTO base_table_temp VALUES('1xcbvrpy', 'sale', 'settled', '2018-12-11', 1084.85, 1084.85, 'NA', 'Credit Card', 'Visa', '479851******0045', 13790, 'United States of America', 'NA', 'NA', '192.237.212.164', 1000.0, 'USD');
+-- INSERT INTO base_table_temp VALUES('2nk2hgjy', 'sale', 'settled', '2018-12-13', 995.42, 995.42, 'NA', 'Credit Card', 'MasterCard', '546616******2397', 28411, 'United States of America', 'NA', 'NA', '192.237.212.164', 1000.0, 'USD');
+-- INSERT INTO base_table_temp VALUES('47wjpd20', 'sale', 'settled', '2018-12-11', 1115.65, 1115.65, 'NA', 'Credit Card', 'MasterCard', '546616******3446', 27519, 'United States of America', 'NA', 'NA', '192.237.212.164', 1000.0, 'USD');
+-- INSERT INTO base_table_temp VALUES('5013smqh', 'sale', 'settled', '2018-12-13', 1505.15, 1505.15, 'NA', 'Credit Card', 'Visa', '479851******8310', 27966, 'United States of America', 'NA', 'NA', '192.237.212.164', 1000.0, 'USD');
+-- INSERT INTO base_table_temp VALUES('5yxx6jy9', 'sale', 'settled', '2018-12-03', 1056.25, 1056.25, 'NA', 'Credit Card', 'Visa', '479851******7701', 43023, 'United States of America', 'NA', 'NA', '192.237.212.164', 1000.0, 'USD');
+-- INSERT INTO base_table_temp VALUES('1xcbvrxy', 'sale', 'settled', Timestamp('2018-12-11 00:00:00'), 1084.85, 1084.85, 'NA', 'Credit Card', 'Visa', '479851******0045', 13790, 'United States of America', 'NA', 'NA', '192.237.212.164', 1000.0, 'USD');
 
+/*
+-- Weekly EG, Daily EG, Processor Declined, Same Dollar Transaction, Refund are merchant level rules
+
+-- table to get rollup at a date level
+-- txn cnt, txn amt, per cc, 
+-- look for ASP, high settlement amount, outlier, heavy CC, 
+-- same dollar txns, same IP (outside of US IP), shipping and billing address not same, 
+-- past data...leverage past data to inference?
+    -- geo mismatch (looking at the overall level and then drawing out inferences)
+*/
+
+-- base table to create merchant level rollup
 drop table if exists cos_merch_base_settled_txns;
 create table cos_merch_base_settled_txns as 
 (
@@ -45,6 +90,7 @@ create table cos_merch_base_settled_txns as
         )t1
 );
         
+-- base table to create merchant level rollup with CC info
 drop table if exists cos_merch_base_settled_cc_txns;
 create table cos_merch_base_settled_cc_txns as 
 (
@@ -53,18 +99,18 @@ create table cos_merch_base_settled_cc_txns as
         t1.total_amt*1.0000 / t1.total_txns*1.0000 as cc_asp
         from 
         (
-			SELECT
-				merch_id,
-				sttlmnt_dt,
-				substr(cc_number,1,6) as cr_card_bin,
-				count(distinct(txn_id)) as total_txns,
-				sum(sttlmnt_amt) as total_amt,
-				max(sttlmnt_amt) as max_sttlmnt_amt,
-				min(sttlmnt_amt) as min_sttlmnt_amt
-			from base_table
-			where txn_status = 'settled'
-			group by 1,2,3
-		)t1
+            SELECT
+                merch_id,
+                sttlmnt_dt,
+                substr(cc_number,1,6) as cr_card_bin,
+                count(distinct(txn_id)) as total_txns,
+                sum(sttlmnt_amt) as total_amt,
+                max(sttlmnt_amt) as max_sttlmnt_amt,
+                min(sttlmnt_amt) as min_sttlmnt_amt
+            from base_table
+            where txn_status = 'settled'
+            group by 1,2,3
+        )t1
 );
 
 -- [RULE] CONCENTRATED BIN TXNS - X% more txns processed on the same bin [LOGIC]
@@ -176,7 +222,7 @@ create table cos_rule_same_dollar_amt as
     and base.sttlmnt_dt = txn.sttlmnt_dt
     where base.sttlmnt_amt >= 10
     and txn.total_txns >= 3
-);	
+);  
 
 -- [RULE] daily EG
 drop table if exists cos_past_day_txn;
@@ -208,7 +254,8 @@ create table cos_rule_daily_eg as
 (
     SELECT
         base.merch_id,
-        case when base.total_txns > eg.past_day_amt * 1.5 then 'Y' else 'N' end as high_eg_flag
+        base.sttlmnt_dt,
+        case when base.total_amt > eg.past_day_amt * 1.5 then 'Y' else 'N' end as high_eg_flag
     from cos_merch_base_settled_txns base
     left join cos_past_day_txn eg
     on base.merch_id = eg.merch_id
@@ -233,8 +280,8 @@ create table cos_past_2wk_txn as
         max(max_sttlmnt_amt) as max_2wk_sttlmnt_amt,
         min(min_sttlmnt_amt) as min_2wk_sttlmnt_amt
     from cos_merch_base_settled_txns
-    where sttlmnt_dt between subdate(current_date, 14) and subdate(current_date, 1)    
-	group by 1,2
+    where sttlmnt_dt between subdate(current_date, 14) and subdate(current_date, 1)
+    group by 1,2
 );
 
 drop table if exists cos_rule_wk_eg;
@@ -242,7 +289,8 @@ create table cos_rule_wk_eg as
 (
     SELECT
         base.merch_id,
-        case when base.total_txns > wk.avg_total_amt * 3 then 'Y' else 'N' end as high_wk_flag
+        base.sttlmnt_dt,
+        case when base.total_amt > wk.avg_total_amt * 3 then 'Y' else 'N' end as high_wk_flag
     from cos_merch_base_settled_txns base
     left join cos_past_2wk_txn wk
     on base.merch_id = wk.merch_id
@@ -291,7 +339,10 @@ create table cos_cons_txn_view1 as
         asp.asp_diff_amt,
         outlier.high_outlier_flag,
         same_dol.same_dollar_amt_flag,
-        high_sttl.high_sttlmnt_amt_flag
+        high_sttl.high_sttlmnt_amt_flag,
+        high_eg.high_eg_flag,
+        wk_eg.high_wk_flag,
+        concc.total_bin_txns_amt * 0.05 as concc_amt_flag
         from base_table base
         left join cos_rule_high_asp asp
         on base.merch_id = asp.merch_id and base.txn_id = asp.txn_id
@@ -301,6 +352,13 @@ create table cos_cons_txn_view1 as
         on base.merch_id = same_dol.merch_id -- and same_dol.txn_id = asp.txn_id
         left join cos_rule_high_sttlmnt_amt high_sttl
         on base.merch_id = high_sttl.merch_id and high_sttl.txn_id = asp.txn_id        
+        left join cos_rule_daily_eg high_eg
+        on base.merch_id = high_eg.merch_id and base.sttlmnt_dt = high_eg.sttlmnt_dt
+        left join cos_rule_wk_eg wk_eg
+        on base.merch_id = wk_eg.merch_id and base.sttlmnt_dt = wk_eg.sttlmnt_dt
+        left join cos_rule_concc_flag_amt concc
+        on base.merch_id = concc.merch_id and base.sttlmnt_dt = concc.sttlmnt_dt
+
         where txn_status = 'settled'
         and txn_type = 'sale'
 );
@@ -315,11 +373,14 @@ create table cos_cons_txn_view2 as
         txn_status,
         txn_type,
         settlement_date,
-        case when high_asp_txn_flag = 'Y' then 10 else 0 end as flag_asp_score,
+        case when high_asp_txn_flag = 'Y' then 12 else 0 end as flag_asp_score,
         case when high_asp_txn_flag = 'Y' and asp_diff_amt > 0 then asp_diff_amt * 0.01 else 0 end as flag_asp_multipler,
-        case when high_outlier_flag = 'Y' then 15 else 0 end as flag_outlier_score,
+        case when high_outlier_flag = 'Y' then 18 else 0 end as flag_outlier_score,
         case when same_dollar_amt_flag = 'Y' then 8 else 0 end as flag_same_dollar_amt,
-        case when same_dollar_amt_flag = 'Y' then 12 else 0 end as flag_high_sttlmnt_amt
+        case when same_dollar_amt_flag = 'Y' then 15 else 0 end as flag_high_sttlmnt_amt,
+        case when high_eg_flag = 'Y' then 10 else 0 end flag_high_daily_eg,
+        case when high_wk_flag = 'Y' then 12 else 0 end flag_high_weekly_eg,
+        coalesce(concc_amt_flag,0) as flag_concc_amt
     from cos_cons_txn_view1
 );
 
@@ -352,9 +413,49 @@ create table cos_cons_txn_score as
             flag_same_dollar_amt,
             flag_high_sttlmnt_amt,
             flag_asp_multipler,
-            flag_asp_score + flag_asp_multipler + flag_outlier_score + flag_same_dollar_amt + flag_high_sttlmnt_amt + flag_asp_multipler as risk_score
+            flag_asp_score 
+                + flag_asp_multipler 
+                + flag_outlier_score 
+                + flag_same_dollar_amt 
+                + flag_high_sttlmnt_amt 
+                + flag_asp_multipler 
+                + flag_high_daily_eg
+                + flag_high_weekly_eg
+                + flag_concc_amt
+            as risk_score
         from cos_cons_txn_view2
         ) t1
 );
+ 
+-- getting max and min score values for normalization
+drop table if exists cos_max_min_score; 
+create table cos_max_min_score as 
+(
+    SELECT
+        merch_id,
+        settlement_date,
+        max(risk_score * 1.00) as max_risk_score,
+        min(risk_score * 1.00) as min_risk_score
+    from cos_cons_txn_score
+    group by 1,2
+);
 
-
+-- normalized score 
+drop table if exists cos_normalized_score;
+create table cos_normalized_score as 
+(
+    SELECT
+        t1.merch_id,
+        t1.txn_id,
+        t1.txn_status,
+        t1.txn_type,
+        t1.settlement_date,
+        t1.risk_reason,
+        t1.risk_score as org_score,
+        -- ((t1.risk_score - st.min_score * 1.00) / st.max_min_diff) * 100.00 as normalized_score
+    from cos_cons_txn_score t1
+    join cos_cons_txn_score t2
+    on t1.txn_id = t2.txn_id
+    and t1.settlement_date = t2.settlement_date
+    group by 1,2,3,4,5,6,7,8
+);

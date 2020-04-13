@@ -20,8 +20,12 @@ if FileType == 'xlsx':
 else:
     file = pd.read_csv(file_name,error_bad_lines=False)
 
+# In[152]:
+
+
 ### passing the file type flow
 def stripe_file_conversion(file):
+    
     col_req = ['id','Description','Mode','Created (UTC)'
                ,'Amount','Converted Amount','Amount Refunded'
                ,'Card Funding','Card Brand','Card Last4'
@@ -39,14 +43,21 @@ def stripe_file_conversion(file):
                   ,'IP_Addr','Processor_Response_Code','Settlement_Currency']
     
     data.columns = col_rename
-
+    
+    data['Sttlmnt_Dt'] = pd.to_datetime(data['Sttlmnt_Dt'])
+    #data['Sttlmnt_Dt'] = data['Sttlmnt_Dt'].dt.date    
+    
     cat_cols = [x for x in data.dtypes.index if data.dtypes[x] =='object']
     date_cols = [x for x in data.dtypes.index if data.dtypes[x] =='datetime64[ns]']
     float_cols = [x for x in data.dtypes.index if data.dtypes[x] =='float64']
 
     data[cat_cols] = data[cat_cols].fillna('NA')
     data[date_cols] = data[date_cols].fillna('9999-12-31')
-    data[float_cols] = data[float_cols].fillna('')
+    data[float_cols] = data[float_cols].fillna('0')
+    
+    data['file_type'] = 'Stripe'
+    data['insert_date'] = pd.Timestamp.now()  
+    data['merch_id'] = ''
 
     sql_state=[]
     table ='base_table_temp'
@@ -56,7 +67,11 @@ def stripe_file_conversion(file):
         sql_state.append('INSERT INTO '+table+ ' VALUES' + str(tuple(row.values))+';')
     #pd.DataFrame(sql_state).to_csv('insert_file_statement.csv')
 
-    pd.DataFrame(sql_state).to_csv('insert_file_statement.csv')
+    pd.DataFrame(sql_state).to_csv('insert_file_statement.csv',index=False)
+
+
+# In[153]:
+
 
 ### passing the file type flow
 def braintree_file_conversion(file):
@@ -75,6 +90,9 @@ def braintree_file_conversion(file):
                   ,'Billing_Postal_Code','Billing_Country','Shipping_Postal_Code','Shipping_Country'
                   ,'IP_Addr','Processor_Response_Code','Settlement_Currency']
     data.columns = col_rename
+    
+    data['Sttlmnt_Dt'] = pd.to_datetime(data['Sttlmnt_Dt'])
+    #data['Sttlmnt_Dt'] = data['Sttlmnt_Dt'].dt.date
 
     cat_cols = [x for x in data.dtypes.index if data.dtypes[x] =='object']
     date_cols = [x for x in data.dtypes.index if data.dtypes[x] =='datetime64[ns]']
@@ -82,17 +100,22 @@ def braintree_file_conversion(file):
 
     data[cat_cols] = data[cat_cols].fillna('NA')
     data[date_cols] = data[date_cols].fillna('9999-12-31')
-    data[float_cols] = data[float_cols].fillna('')
-
+    data[float_cols] = data[float_cols].fillna('0')
+    
+    data['file_type'] = 'Braintree'
+    data['insert_date'] = pd.Timestamp.now()
+    data['merch_id'] = ''
+    
     sql_state=[]
     table ='base_table_temp'
 
     for index,row in data.iterrows():
-        #sql_state.append('INSERT INTO '+table+' ('+ str(', '.join(modif_df.columns))+ ') VALUES ' + str(tuple(row.values)))
         sql_state.append('INSERT INTO '+table+ ' VALUES' + str(tuple(row.values))+';')
-    #pd.DataFrame(sql_state).to_csv('insert_file_statement.csv')
 
-    pd.DataFrame(sql_state).to_csv('insert_file_statement.csv')
+    pd.DataFrame(sql_state).to_csv('insert_file_statement.csv',index=False)
+
+
+# In[154]:
 
 
 ### identifying the file type (Braintree or Stripe)
@@ -105,6 +128,5 @@ elif file.columns[0]=='id':
     stripe_file_conversion(file)
 else:
     file_type = 'Unknown'
-
 print 'success'
 
