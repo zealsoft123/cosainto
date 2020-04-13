@@ -33,7 +33,6 @@ class DashboardController extends Controller {
    * @return \Illuminate\Contracts\Support\Renderable
    */
   public function index() {
-    \App\Http\Controllers\TransactionController::sql_split( base_path( 'data-ingestion/ingest.sql' ) );
     return view( 'dashboard', $this->getDashboardData());
   }
 
