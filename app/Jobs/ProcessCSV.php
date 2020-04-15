@@ -40,25 +40,30 @@ class ProcessCSV implements ShouldQueue
             $contents = file_get_contents(  base_path( 'data-ingestion/insert_file_statement.csv' ) );
             $queries = explode("\n", $contents);
             $filtered_queries = [];
-            $filtered_queries[] = 'drop table if exists base_table_temp;
-            create table base_table_temp (txn_id varchar(40),
-                txn_type varchar(40),
-                txn_status varchar(40),
+
+            $filtered_queries[] = "drop table if exists base_table_temp;
+                create table base_table_temp (
+                txn_id varchar(100),
+                txn_type varchar(20),
+                txn_status varchar(20),
                 sttlmnt_dt DATE ,
-                auth_amt Decimal (7,2),
-                sttlmnt_amt Decimal(7,2),
-                refund_txn_id varchar(40),
-                payment_type varchar(40),
-                card_type varchar(40),
-                cc_number varchar(40),
-                billing_postal_cd varchar(40),
+                auth_amt Decimal (18,2),
+                sttlmnt_amt Decimal(18,2),
+                refund_txn_id varchar(20),
+                payment_type varchar(20),
+                card_type varchar(20),
+                cc_number varchar(50),
+                billing_postal_cd varchar(20),
                 billing_country varchar(100),
-                shipping_postal_cd varchar(40),
+                shipping_postal_cd varchar(20),
                 shipping_country varchar(100),
-                ip_addr varchar(40),
-                processor_response_code varchar(40),
-                sttlmnt_currency varchar(40)
-            );';
+                ip_addr varchar(20),
+                processor_response_code varchar(20),
+                sttlmnt_currency varchar(20),
+                file_type varchar(20),
+                insert_date DATE,
+                merch_id varchar(20)
+            );";
 
             foreach( $queries as $query ) {
                 if( strlen( $query ) < 5 ) {

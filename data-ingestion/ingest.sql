@@ -1,29 +1,3 @@
-drop table if exists base_table_temp;
-create table base_table_temp (
-    txn_id varchar(100),
-    txn_type varchar(20),
-    txn_status varchar(20),
-    sttlmnt_dt DATE ,
-    -- sttlmnt_dt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ,
-    auth_amt Decimal (7,2),
-    sttlmnt_amt Decimal(7,2),
-    refund_txn_id varchar(20),
-    payment_type varchar(20),
-    card_type varchar(20),
-    cc_number varchar(50),
-    billing_postal_cd varchar(20),
-    billing_country varchar(100),
-    shipping_postal_cd varchar(20),
-    shipping_country varchar(100),
-    ip_addr varchar(20),
-    processor_response_code varchar(20),
-    sttlmnt_currency varchar(20),
-    file_type varchar(20),
-    insert_date DATE,
-    merch_id varchar(20)
-);
-
-
 -- adding merchant ID
 drop table if exists base_table;
 create table base_table as
@@ -452,7 +426,6 @@ create table cos_normalized_score as
         t1.settlement_date,
         t1.risk_reason,
         t1.risk_score as org_score,
-        -- ((t1.risk_score - st.min_score * 1.00) / st.max_min_diff) * 100.00 as normalized_score
     from cos_cons_txn_score t1
     join cos_cons_txn_score t2
     on t1.txn_id = t2.txn_id

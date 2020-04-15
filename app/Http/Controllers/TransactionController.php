@@ -175,7 +175,8 @@ class TransactionController extends Controller {
 
     // Create the base table and base_table_temp
     $base_query = "drop table if exists base_table_temp;
-    create table base_table_temp (txn_id varchar(40),
+        create table base_table_temp (
+        txn_id varchar(100),
         txn_type varchar(20),
         txn_status varchar(20),
         sttlmnt_dt DATE ,
@@ -184,14 +185,17 @@ class TransactionController extends Controller {
         refund_txn_id varchar(20),
         payment_type varchar(20),
         card_type varchar(20),
-        cc_number varchar(20),
+        cc_number varchar(50),
         billing_postal_cd varchar(20),
         billing_country varchar(100),
         shipping_postal_cd varchar(20),
         shipping_country varchar(100),
         ip_addr varchar(20),
         processor_response_code varchar(20),
-        sttlmnt_currency varchar(20)
+        sttlmnt_currency varchar(20),
+        file_type varchar(20),
+        insert_date DATE,
+        merch_id varchar(20)
     );";
 
     DB::connection('mysql2')->getPdo()->exec($base_query);
