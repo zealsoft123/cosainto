@@ -128,5 +128,6 @@ elif file.columns[0]=='id':
     stripe_file_conversion(file)
 else:
     file_type = 'Unknown'
+print file_type
 print 'success'
 

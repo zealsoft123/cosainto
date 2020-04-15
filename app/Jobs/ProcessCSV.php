@@ -30,6 +30,18 @@ class ProcessCSV implements ShouldQueue
      */
     public function handle()
     {   
+        if( file_exists( base_path('data-ingestion') . '/data.csv') ) {
+            unlink(base_path('data-ingestion') . '/data.csv');
+        }
+
+        if( file_exists( base_path('data-ingestion') . '/data.xlsx') ) {
+            unlink(base_path('data-ingestion') . '/data.xlsx');
+        }
+
+        if( file_exists( base_path('data-ingestion') . '/insert_file_statement.csv') ) {
+            unlink(base_path('data-ingestion') . '/insert_file_statement.csv');
+        }
+
         $user = Auth::User();
         $organization = Organization::findOrFail($user->organization);
 

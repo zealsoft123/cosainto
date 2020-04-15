@@ -425,10 +425,10 @@ create table cos_normalized_score as
         t1.txn_type,
         t1.settlement_date,
         t1.risk_reason,
-        t1.risk_score as org_score,
+        t1.risk_score as org_score
     from cos_cons_txn_score t1
     join cos_cons_txn_score t2
     on t1.txn_id = t2.txn_id
     and t1.settlement_date = t2.settlement_date
-    group by 1,2,3,4,5,6,7,8
+    group by 1,2,3,4,5,6,7
 );
