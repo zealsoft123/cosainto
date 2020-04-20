@@ -432,9 +432,8 @@ create table cos_normalized_score as
     and t1.settlement_date = t2.settlement_date
     group by 1,2,3,4,5,6,7
 );
-              
---final table 
-drop table cos_txn_score_final;
+
+drop table if exists cos_txn_score_final;
 create table cos_txn_score_final as
 (
    t1.merch_id,
