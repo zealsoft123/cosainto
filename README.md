@@ -54,5 +54,23 @@ Once the import process is complete and all the transactions are successfully st
 
 To update the model, modify the `data-ingestion/ingest.sql` or the `data-investion/ingest.py` file. This can be done in Github and all modifications will be auto-deployed to the staging server 1-2 minutes after commit.
 
+# Updating the model
+The model can be updated by checking in changes to the MySQL and/or Python scripts and pushing them to Github. As detailed below, and commit to the `master` branch that is pushed to Github will be automatically deployed. There are some important considerations for each of these file types that will keep the application working properly after every model update.
+
+## Python 
+  - When the script imports the CSV/XLSX script, the script needs to check for either data.csv or data.xlsx, which is where Laravel moves the data file on the server. The code snippet should resemble something like this:
+  ```
+  if( os.path.exists("data.csv") ):
+    file_name = 'data.csv'
+  else:
+    file_name = 'data.xlsx'
+
+  FileType  = str.rsplit(file_name,'.',1)[1]
+```
+  - At the very end of the file, the script should print `success`. This will never be output to the user, but tells Laravel that the Python script ran successfully and the model process should be allowed to continue.
+
+## MySQL
+  - Make sure all `drop table` statements are `drop table if exists`. This will ensure if the database is altered or we decide to start cleaning up tables after model runs in the future there aren't fatal errors from dropping a table that doesn't exist.
+
 # Deploy
 All commits to the `master` branch are auto-deployed to staging ([https://cosainto.ap.dev](https://cosainto.ap.dev)) using Github Actions.
