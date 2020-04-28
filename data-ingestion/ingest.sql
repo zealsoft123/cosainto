@@ -436,27 +436,28 @@ create table cos_normalized_score as
 drop table if exists cos_txn_score_final;
 create table cos_txn_score_final as
 (
-   t1.merch_id,
-   t1.txn_id,
-   t1.txn_type,
-   t1.txn_status,
-   t1.sttlmnt_dt,
-   t1.auth_amt,
-   t1.sttlmnt_amt,
-   t1.refund_txn_id,
-   t1.payment_type,
-   t1.card_type,
-   t1.cc_number,
-   t1.billing_postal_cd,
-   t1.billing_country,
-   t1.shipping_postal_cd,
-   t1.shipping_country,
-   t1.ip_addr,
-   t1.processor_response_code,
-   t1.sttlmnt_currency,
-   t2.risk_reason,
-   t2.risk_score
+   SELECT
+    t1.merch_id,
+    t1.txn_id,
+    t1.txn_type,
+    t1.txn_status,
+    t1.sttlmnt_dt,
+    t1.auth_amt,
+    t1.sttlmnt_amt,
+    t1.refund_txn_id,
+    t1.payment_type,
+    t1.card_type,
+    t1.cc_number,
+    t1.billing_postal_cd,
+    t1.billing_country,
+    t1.shipping_postal_cd,
+    t1.shipping_country,
+    t1.ip_addr,
+    t1.processor_response_code,
+    t1.sttlmnt_currency,
+    t2.risk_reason,
+    t2.org_score
    from base_table t1
-   left join cos_normalized_score t2
+   join cos_normalized_score t2
    on t1.txn_id = t2.txn_id
 );              
