@@ -8,6 +8,10 @@ use Auth;
 use \App\Organization;
 use \App\Transaction;
 
+use \App\Imports\TransactionsImport;
+
+use Maatwebsite\Excel\Facades\Excel;
+
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -105,12 +109,40 @@ class ProcessCSV implements ShouldQueue
 
             $existing_txs = [];
 
+            // Parse data.csv or data.xlsx to get things like shipping and billing info for each transaction
+            if( file_exists( base_path('data-ingestion') . '/data.csv') ) {
+                // CSV
+                $orig_data = [];
+
+                $file = fopen(base_path('data-ingestion') . '/data.csv', 'r');
+                while (($line = fgetcsv($file)) !== FALSE) {
+                  //$line is an array of the csv elements
+                  $orig_data[] = $line;
+                }
+                fclose($file);
+            }
+            else if( file_exists( base_path('data-ingestion') . '/data.xlsx') ) {
+                // XLSX
+                $orig_data = [];
+
+                $orig_data = Excel::toArray(new TransactionsImport, base_path('data-ingestion') . '/data.xlsx');
+            }
+
             foreach( $txs as $tx ) {
                 if( in_array($tx->txn_id, $existing_txs) ) {
                     continue;
                 }
 
                 $tx_data = DB::connection('mysql2')->table('base_table_temp')->where('txn_id', '=', $tx->txn_id)->get();
+
+                $orig_tx = array_map(function($item) use ($tx) {
+                    if ($item['transaction_id'] == $tx->txn_id) {
+                        return $item;
+                    }
+                }, $orig_data[0]);
+
+                $orig_tx = array_filter( $orig_tx );
+                $orig_tx = array_shift( $orig_tx );
 
                 // Supplment array with data from `base_table_temp`
                 $new_tx = new Transaction([
@@ -121,17 +153,17 @@ class ProcessCSV implements ShouldQueue
                   'amount'             => $tx_data[0]->sttlmnt_amt,
                   'card_number'        => $tx_data[0]->cc_number,
                   'expiration_date'    => 'NA',
-                  'billing_name'       => '',
-                  'billing_address'    => '',
-                  'billing_city'       => '',
+                  'billing_name'       => $orig_tx['billing_first_name'] . ' ' . $orig_tx['billing_last_name'],
+                  'billing_address'    => $orig_tx['billing_street_address'],
+                  'billing_city'       => $orig_tx['billing_city_locality'],
                   'billing_zipcode'    => $tx_data[0]->billing_postal_cd,
-                  'billing_state'      => '',
+                  'billing_state'      => $orig_tx['billing_stateprovince_region'],
                   'billing_country'    => $tx_data[0]->billing_country,
-                  'shipping_name'      => '',
-                  'shipping_address'   => '',
-                  'shipping_city'      => '',
+                  'shipping_name'      => $orig_tx['shipping_first_name'] . ' ' . $orig_tx['shipping_last_name'],
+                  'shipping_address'   => $orig_tx['shipping_street_address'],
+                  'shipping_city'      => $orig_tx['shipping_city_locality'],
                   'shipping_zipcode'   => $tx_data[0]->shipping_postal_cd,
-                  'shipping_state'     => '',
+                  'shipping_state'     => $orig_tx['shipping_stateprovince_region'],
                   'shipping_country'   => $tx_data[0]->shipping_country,
                   'transaction_date'   => $tx_data[0]->sttlmnt_dt,
                   'merchant_id'        => $tx->merch_id,

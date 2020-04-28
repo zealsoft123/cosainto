@@ -84,7 +84,7 @@ class TransactionsImport implements ToModel, withHeadingRow {
       $billing_state = '';
     }
 
-    return new Transaction([
+    return [
       'organization_id'    => $organization->id,
       'transaction_id'     => array_key_exists( 'transaction_id', $row ) ? $row['transaction_id'] : $row['id'],
       'transaction_status' => array_key_exists( 'transaction_status', $row ) ? $row['transaction_status'] : $row['status'],
@@ -107,6 +107,6 @@ class TransactionsImport implements ToModel, withHeadingRow {
       'transaction_date'   => array_key_exists( 'created_datetime', $row ) ? Carbon::parse($row['created_datetime'])->toDateTimeString() : Carbon::parse($row['created_utc'])->toDateTimeString(),
       'merchant_id'        => $row['merchant_id'] ?? '',
       'card_type'          => $row['card_type'] ?? $row['card_brand']
-    ]);
+    ];
   }
 }
