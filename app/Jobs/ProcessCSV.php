@@ -111,15 +111,8 @@ class ProcessCSV implements ShouldQueue
 
             // Parse data.csv or data.xlsx to get things like shipping and billing info for each transaction
             if( file_exists( base_path('data-ingestion') . '/data.csv') ) {
-                // CSV
-                $orig_data = [];
-
-                $file = fopen(base_path('data-ingestion') . '/data.csv', 'r');
-                while (($line = fgetcsv($file)) !== FALSE) {
-                  //$line is an array of the csv elements
-                  $orig_data[] = $line;
-                }
-                fclose($file);
+                $path = base_path('data-ingestion') . '/data.csv';
+                $orig_data = $this->importFromCSV($path);
             }
             else if( file_exists( base_path('data-ingestion') . '/data.xlsx') ) {
                 // XLSX
@@ -139,7 +132,7 @@ class ProcessCSV implements ShouldQueue
                     if ($item['transaction_id'] == $tx->txn_id) {
                         return $item;
                     }
-                }, $orig_data[0]);
+                }, [$orig_data[0]]);
 
                 $orig_tx = array_filter( $orig_tx );
                 $orig_tx = array_shift( $orig_tx );
@@ -197,46 +190,71 @@ class ProcessCSV implements ShouldQueue
         }
     }
 
-    public static function sql_split($file, $delimiter = ';') {
-    $queries = [];
-    $filtered_queries = [];
+    private function importFromCSV(string $path) : Array {
+        // CSV
+        $orig_data = [];
+        $raw_keys = [];
+        $keys = [];
 
-    if (is_file($file) === true)
+        $file = fopen(base_path('data-ingestion') . '/data.csv', 'r');
+        if(($line = fgetcsv($file)) !== false) {
+            $raw_keys = $line;
+        }
+
+        // Formatting $keys to match transaction keys
+        foreach($raw_keys as $key) {
+            $key = trim($key);
+            $key = strtolower($key);
+            $key = str_replace(' ', '_', $key);
+            $key = preg_replace('/\(|\)/', '', $key);
+            $key = str_replace('/', '', $key);
+            array_push($keys, $key);
+        }
+
+        while(($data = fgetcsv($file)) !== false) {
+            //$line is an array of the csv elements
+            $orig_data[] = array_combine($keys, $data);
+        }
+        fclose($file);
+
+        return $orig_data;
+    }
+
+    public static function sql_split($file, $delimiter = ';')
     {
-        $file = fopen($file, 'r');
+        $queries = [];
+        $filtered_queries = [];
 
-        if (is_resource($file) === true)
-        {
-            $query = array();
+        if (is_file($file) === true) {
+            $file = fopen($file, 'r');
 
-            while (feof($file) === false)
-            {
-                $query[] = fgets($file);
+            if (is_resource($file) === true) {
+                $query = array();
 
-                if (preg_match('~' . preg_quote($delimiter, '~') . '\s*$~iS', end($query)) === 1)
-                {
-                    $query = trim(implode('', $query));
+                while (feof($file) === false) {
+                    $query[] = fgets($file);
 
-                    $queries[] = $query;
-                }
+                    if (preg_match('~' . preg_quote($delimiter, '~') . '\s*$~iS', end($query)) === 1) {
+                        $query = trim(implode('', $query));
 
-                if (is_string($query) === true)
-                {
-                    $query = array();
+                        $queries[] = $query;
+                    }
+
+                    if (is_string($query) === true) {
+                        $query = array();
+                    }
                 }
             }
         }
-    }
 
-    foreach ($queries as $key => $value) {
-        if (strpos($queries[$key], '-- ') !== 0) {
-            $filtered_queries[] = $value;
+        foreach ($queries as $key => $value) {
+            if (strpos($queries[$key], '-- ') !== 0) {
+                $filtered_queries[] = $value;
+            } elseif (strpos($queries[$key], '---') !== 0) {
+                $filtered_queries[] = $value;
+            }
         }
-        elseif( strpos($queries[$key], '---' ) !== 0 ) {
-          $filtered_queries[] = $value;
-        }
-    }
 
-    return $filtered_queries;
-  }
+        return $filtered_queries;
+    }
 }
