@@ -26,3 +26,6 @@ Homestead.json
 .phpunit.result.cache
 
 # End of https://www.gitignore.io/api/laravel
+
+# JetBrains IDEs
+.idea
