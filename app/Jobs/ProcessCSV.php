@@ -143,27 +143,30 @@ class ProcessCSV implements ShouldQueue
                   'transaction_id'     => $tx_data[0]->txn_id,
                   'transaction_status' => $tx_data[0]->txn_status,
                   'transaction_type'   => $tx_data[0]->txn_type,
-                  'amount'             => $tx_data[0]->sttlmnt_amt,
+                  'amount'             => $tx_data[0]->auth_amt,
                   'card_number'        => $tx_data[0]->cc_number,
                   'expiration_date'    => 'NA',
-                  'billing_name'       => $orig_tx['billing_first_name'] . ' ' . $orig_tx['billing_last_name'],
-                  'billing_address'    => $orig_tx['billing_street_address'],
-                  'billing_city'       => $orig_tx['billing_city_locality'],
-                  'billing_zipcode'    => $tx_data[0]->billing_postal_cd,
-                  'billing_state'      => $orig_tx['billing_stateprovince_region'],
-                  'billing_country'    => $tx_data[0]->billing_country,
-                  'shipping_name'      => $orig_tx['shipping_first_name'] . ' ' . $orig_tx['shipping_last_name'],
-                  'shipping_address'   => $orig_tx['shipping_street_address'],
-                  'shipping_city'      => $orig_tx['shipping_city_locality'],
-                  'shipping_zipcode'   => $tx_data[0]->shipping_postal_cd,
-                  'shipping_state'     => $orig_tx['shipping_stateprovince_region'],
-                  'shipping_country'   => $tx_data[0]->shipping_country,
                   'transaction_date'   => $tx_data[0]->sttlmnt_dt,
                   'merchant_id'        => $tx->merch_id,
                   'card_type'          => $tx_data[0]->card_type,
                   'risk_score'         => $tx->risk_score,
                   'risk_reason'        => $tx->risk_reason,
                 ]);
+
+                if(is_array($orig_tx) && array_key_exists('billing_first_name', $orig_tx)) {
+                    $new_tx->billing_name = $orig_tx['billing_first_name'] . ' ' . $orig_tx['billing_last_name'];
+                    $new_tx->billing_address = $orig_tx['billing_street_address'];
+                    $new_tx->billing_city = $orig_tx['billing_city_locality'];
+                    $new_tx->billing_zipcode = $tx_data[0]->billing_postal_cd;
+                    $new_tx->billing_state = $orig_tx['billing_stateprovince_region'];
+                    $new_tx->billing_country = $tx_data[0]->billing_country;
+                    $new_tx->shipping_name = $orig_tx['shipping_first_name'] . ' ' . $orig_tx['shipping_last_name'];
+                    $new_tx->shipping_address = $orig_tx['shipping_street_address'];
+                    $new_tx->shipping_city = $orig_tx['shipping_city_locality'];
+                    $new_tx->shipping_zipcode = $tx_data[0]->shipping_postal_cd;
+                    $new_tx->shipping_state = $orig_tx['shipping_stateprovince_region'];
+                    $new_tx->shipping_country = $tx_data[0]->shipping_country;
+                }
 
                 // Import into Laravel
                 $new_tx->save();                
@@ -203,6 +206,9 @@ class ProcessCSV implements ShouldQueue
 
         // Formatting $keys to match transaction keys
         foreach($raw_keys as $key) {
+            if($key == "id") {
+                $key = "transaction_id";
+            }
             $key = trim($key);
             $key = strtolower($key);
             $key = str_replace(' ', '_', $key);
