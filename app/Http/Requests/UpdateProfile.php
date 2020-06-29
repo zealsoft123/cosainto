@@ -3,8 +3,8 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
-use App\Http\Controllers\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Validator;
 
 class UpdateProfile extends FormRequest
 {
@@ -26,28 +26,28 @@ class UpdateProfile extends FormRequest
     public function rules()
     {
         return [
-            'name'                 => 'nullable',
-            'position'             => 'nullable',
-            'phone_number'         => 'nullable',
-            'email'                => 'nullable|email:rfc,dns',
-            'password'             => 'required',
-            'new-password'         => 'nullable|string|min:8|required_with:new-password_confirmation|confirmed',
-            'business-name'        => 'nullable',
-            'url'                  => 'nullable',
-            'category'             => 'nullable',
-            'payment-provider'     => 'nullable',
-            'street_address'       => 'nullable',
-            'city'                 => 'nullable',
-            'state'                => 'nullable',
-            'zipcode'              => 'nullable',
-            'summary'              => 'nullable',
+            'name' => 'nullable',
+            'position' => 'nullable',
+            'phone_number' => 'nullable',
+            'email' => 'nullable|email:rfc,dns',
+            'password' => 'required',
+            'new-password' => 'nullable|string|min:8|required_with:new-password_confirmation|confirmed',
+            'business-name' => 'nullable',
+            'url' => 'nullable',
+            'category' => 'nullable',
+            'payment-provider' => 'nullable',
+            'street_address' => 'nullable',
+            'city' => 'nullable',
+            'state' => 'nullable',
+            'zipcode' => 'nullable',
+            'summary' => 'nullable',
         ];
     }
 
     /**
      * Configure the validator instance.
      *
-     * @param  \Illuminate\Validation\Validator  $validator
+     * @param Validator $validator
      * @return void
      */
     public function withValidator($validator)
@@ -55,10 +55,10 @@ class UpdateProfile extends FormRequest
         // checks user current password
         // before making changes
         $validator->after(function ($validator) {
-            if ( !Hash::check($this->password, $this->user()->password) ) {
+            if (!Hash::check($this->password, $this->user()->password)) {
                 $validator->errors()->add('password', 'Your current password is incorrect.');
             }
         });
         return;
-     }
+    }
 }

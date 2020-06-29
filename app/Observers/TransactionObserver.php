@@ -9,7 +9,7 @@ class TransactionObserver
     /**
      * Handle the transaction "created" event.
      *
-     * @param  \App\Transaction  $transaction
+     * @param Transaction $transaction
      * @return void
      */
     public function created(Transaction $transaction)
@@ -20,12 +20,12 @@ class TransactionObserver
     /**
      * Handle the transaction "updated" event.
      *
-     * @param  \App\Transaction  $transaction
+     * @param Transaction $transaction
      * @return void
      */
     public function updated(Transaction $transaction)
     {
-        if( $transaction->investigation_summary && $transaction->review_status != 'completed' ) {
+        if ($transaction->investigation_summary && $transaction->review_status != 'completed') {
             $transaction->review_status = 'completed';
             $transaction->save();
         }
@@ -34,7 +34,7 @@ class TransactionObserver
     /**
      * Handle the transaction "deleted" event.
      *
-     * @param  \App\Transaction  $transaction
+     * @param Transaction $transaction
      * @return void
      */
     public function deleted(Transaction $transaction)
@@ -45,7 +45,7 @@ class TransactionObserver
     /**
      * Handle the transaction "restored" event.
      *
-     * @param  \App\Transaction  $transaction
+     * @param Transaction $transaction
      * @return void
      */
     public function restored(Transaction $transaction)
@@ -56,7 +56,7 @@ class TransactionObserver
     /**
      * Handle the transaction "force deleted" event.
      *
-     * @param  \App\Transaction  $transaction
+     * @param Transaction $transaction
      * @return void
      */
     public function forceDeleted(Transaction $transaction)
