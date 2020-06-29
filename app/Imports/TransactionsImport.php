@@ -2,23 +2,29 @@
 
 namespace App\Imports;
 
-use Carbon\Carbon;
-
 use App\Organization;
 use Auth;
-
+use Carbon\Carbon;
 use Illuminate\Support\Collection;
 use Maatwebsite\Excel\Concerns\ToCollection;
 use Maatwebsite\Excel\Concerns\WithHeadingRow;
 
-class TransactionsImport implements ToCollection, withHeadingRow {
-    public $data = Array();
+class TransactionsImport implements ToCollection, withHeadingRow
+{
+
+    /**
+     * Store the data extracted from an Excel file
+     * @var array
+     */
+    public $data = array();
+
     /**
      * @param Collection $rows
      *
      * @return void
      */
-    public function collection(Collection $rows) {
+    public function collection(Collection $rows)
+    {
         foreach ($rows as $row) {
             $user = Auth::User();
             $organization = Organization::findOrFail($user->organization);

@@ -2,8 +2,6 @@
 
 namespace App\Jobs;
 
-use Carbon\Carbon;
-
 use Auth;
 use \App\Organization;
 use \App\Transaction;
@@ -12,14 +10,11 @@ use \App\Imports\TransactionsImport;
 
 use Maatwebsite\Excel\Facades\Excel;
 
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Schema;
-use Illuminate\Database\Schema\Blueprint;
 
 use DB;
 
@@ -41,36 +36,38 @@ class ProcessCSV implements ShouldQueue
 
         if( strpos($output, 'success') !== false ) {
             // Python script worked
-            $contents = file_get_contents(  base_path( 'data-ingestion/insert_file_statement.csv' ) );
+            $contents = file_get_contents(base_path('data-ingestion/insert_file_statement.csv'));
             $queries = explode("\n", $contents);
             $filtered_queries = [];
 
-            $filtered_queries[] = "drop table if exists base_table_temp;
+            $filtered_queries[] = <<<'SQL'
+                drop table if exists base_table_temp;
                 create table base_table_temp (
-                txn_id varchar(100),
-                txn_type varchar(20),
-                txn_status varchar(20),
-                sttlmnt_dt DATE ,
-                auth_amt Decimal (18,2),
-                sttlmnt_amt Decimal(18,2),
-                refund_txn_id varchar(20),
-                payment_type varchar(20),
-                card_type varchar(20),
-                cc_number varchar(50),
-                billing_postal_cd varchar(20),
-                billing_country varchar(100),
-                shipping_postal_cd varchar(20),
-                shipping_country varchar(100),
-                ip_addr varchar(20),
-                processor_response_code varchar(20),
-                sttlmnt_currency varchar(20),
-                file_type varchar(20),
-                insert_date DATE,
-                merch_id varchar(20)
-            );";
+                    txn_id varchar(100),
+                    txn_type varchar(20),
+                    txn_status varchar(20),
+                    sttlmnt_dt DATE ,
+                    auth_amt Decimal (18,2),
+                    sttlmnt_amt Decimal(18,2),
+                    refund_txn_id varchar(20),
+                    payment_type varchar(20),
+                    card_type varchar(20),
+                    cc_number varchar(50),
+                    billing_postal_cd varchar(20),
+                    billing_country varchar(100),
+                    shipping_postal_cd varchar(20),
+                    shipping_country varchar(100),
+                    ip_addr varchar(20),
+                    processor_response_code varchar(20),
+                    sttlmnt_currency varchar(20),
+                    file_type varchar(20),
+                    insert_date DATE,
+                    merch_id varchar(20)
+                );
+SQL;
 
-            foreach( $queries as $query ) {
-                if( strlen( $query ) < 5 ) {
+            foreach ($queries as $query) {
+                if (strlen($query) < 5) {
                     continue;
                 }
 
@@ -79,83 +76,80 @@ class ProcessCSV implements ShouldQueue
                 $filtered_queries[] = $query;
             }
 
-            foreach( $filtered_queries as $query ) {        
+            foreach ($filtered_queries as $query) {
                 // Fix python unicode stuff
                 $query = str_replace(", u'", ", '", $query);
                 $query = str_replace("(u'", "('", $query);
                 $query = str_replace("''", "NULL", $query);
 
-                $query = preg_replace_callback('/datetime\.datetime\((.*?)\)/', function($match){
+                $query = preg_replace_callback('/datetime\.datetime\((.*?)\)/', function ($match) {
                     $arr = explode(',', $match[1]);
 
-                    $year  = $arr[0];
+                    $year = $arr[0];
                     $month = sprintf("%02d", $arr[1]);
-                    $day   = sprintf("%02d", $arr[2]);
+                    $day = sprintf("%02d", $arr[2]);
 
                     return "Timestamp('{$year}-{$month}-{$day} 00:00:00')";
                 }, $query);
 
-                DB::connection('mysql2')->getPdo()->exec( $query );
+                DB::connection('mysql2')->getPdo()->exec($query);
             }
 
-            $queries = $this::sql_split( base_path( 'data-ingestion/ingest.sql' ) );
+            $queries = $this::sql_split(base_path('data-ingestion/ingest.sql'));
 
-            foreach( $queries as $query ) {
-                DB::connection('mysql2')->getPdo()->exec( $query );
+            foreach ($queries as $query) {
+                DB::connection('mysql2')->getPdo()->exec($query);
             }
 
             // Grab the IDs and scores into an array
             $txs = DB::connection('mysql2')->table('cos_cons_txn_score')->select('merch_id', 'txn_id', 'risk_score', 'risk_reason')->get();
 
             $existing_txs = [];
+            $orig_data = [];
 
             // Parse data.csv or data.xlsx to get things like shipping and billing info for each transaction
-            if( file_exists( base_path('data-ingestion') . '/data.csv') ) {
+            if (file_exists(base_path('data-ingestion') . '/data.csv')) {
                 $path = base_path('data-ingestion') . '/data.csv';
                 $orig_data = $this->importFromCSV($path);
-            }
-            else if( file_exists( base_path('data-ingestion') . '/data.xlsx') ) {
+            } else if (file_exists(base_path('data-ingestion') . '/data.xlsx')) {
                 // XLSX
-                $orig_data = [];
-
-                $import = new TransactionsImport;
-                Excel::import($import, base_path('data-ingestion') . '/data.xlsx');
-                $orig_data = $import->data;
+                $path = base_path('data-ingestion') . '/data.xlsx';
+                $orig_data = $this->importFromExcel($path);
             }
 
-            foreach( $txs as $tx ) {
-                if( in_array($tx->txn_id, $existing_txs) ) {
+            foreach ($txs as $tx) {
+                if (in_array($tx->txn_id, $existing_txs)) {
                     continue;
                 }
 
                 $tx_data = DB::connection('mysql2')->table('base_table_temp')->where('txn_id', '=', $tx->txn_id)->get();
 
-                $orig_tx = array_map(function($item) use ($tx) {
+                $orig_tx = array_map(function ($item) use ($tx) {
                     if ($item['transaction_id'] == $tx->txn_id) {
                         return $item;
                     }
                 }, [$orig_data[0]]);
 
-                $orig_tx = array_filter( $orig_tx );
-                $orig_tx = array_shift( $orig_tx );
+                $orig_tx = array_filter($orig_tx);
+                $orig_tx = array_shift($orig_tx);
 
-                // Supplment array with data from `base_table_temp`
+                // Supplement array with data from `base_table_temp`
                 $new_tx = new Transaction([
-                  'organization_id'    => $organization->id,
-                  'transaction_id'     => $tx_data[0]->txn_id,
-                  'transaction_status' => $tx_data[0]->txn_status,
-                  'transaction_type'   => $tx_data[0]->txn_type,
-                  'amount'             => $tx_data[0]->auth_amt,
-                  'card_number'        => $tx_data[0]->cc_number,
-                  'expiration_date'    => 'NA',
-                  'transaction_date'   => $tx_data[0]->sttlmnt_dt,
-                  'merchant_id'        => $tx->merch_id,
-                  'card_type'          => $tx_data[0]->card_type,
-                  'risk_score'         => $tx->risk_score,
-                  'risk_reason'        => $tx->risk_reason,
+                    'organization_id' => $organization->id,
+                    'transaction_id' => $tx_data[0]->txn_id,
+                    'transaction_status' => $tx_data[0]->txn_status,
+                    'transaction_type' => $tx_data[0]->txn_type,
+                    'amount' => $tx_data[0]->auth_amt,
+                    'card_number' => $tx_data[0]->cc_number,
+                    'expiration_date' => 'NA',
+                    'transaction_date' => $tx_data[0]->sttlmnt_dt,
+                    'merchant_id' => $tx->merch_id,
+                    'card_type' => $tx_data[0]->card_type,
+                    'risk_score' => $tx->risk_score,
+                    'risk_reason' => $tx->risk_reason,
                 ]);
 
-                if(is_array($orig_tx) && array_key_exists('billing_first_name', $orig_tx)) {
+                if (is_array($orig_tx) && array_key_exists('billing_first_name', $orig_tx)) {
                     $new_tx->billing_name = $orig_tx['billing_first_name'] . ' ' . $orig_tx['billing_last_name'];
                     $new_tx->billing_address = $orig_tx['billing_street_address'];
                     $new_tx->billing_city = $orig_tx['billing_city_locality'];
@@ -171,37 +165,44 @@ class ProcessCSV implements ShouldQueue
                 }
 
                 // Import into Laravel
-                $new_tx->save();                
+                $new_tx->save();
                 $existing_txs[] = $tx->txn_id;
             }
 
-            if( file_exists( base_path('data-ingestion') . '/data.csv') ) {
+            if (file_exists(base_path('data-ingestion') . '/data.csv')) {
                 unlink(base_path('data-ingestion') . '/data.csv');
             }
 
-            if( file_exists( base_path('data-ingestion') . '/data.xlsx') ) {
+            if (file_exists(base_path('data-ingestion') . '/data.xlsx')) {
                 unlink(base_path('data-ingestion') . '/data.xlsx');
             }
 
-            if( file_exists( base_path('data-ingestion') . '/insert_file_statement.csv') ) {
+            if (file_exists(base_path('data-ingestion') . '/insert_file_statement.csv')) {
                 unlink(base_path('data-ingestion') . '/insert_file_statement.csv');
             }
 
             return redirect('/dashboard');
         }
         else {
+            // TODO: Handle this more appropiately once I understand more the system
             dd($output);
             // Python script didn't work and there's some sort of error
         }
     }
 
-    private function importFromCSV(string $path) : Array {
+    /**
+     * Import transactions from CSV files
+     * @param string $path Path to CSV file
+     * @return array
+     */
+    private function importFromCSV(string $path) : array
+    {
         // CSV
-        $orig_data = [];
+        $result = [];
         $raw_keys = [];
         $keys = [];
 
-        $file = fopen(base_path('data-ingestion') . '/data.csv', 'r');
+        $file = fopen($path, 'r');
         if(($line = fgetcsv($file)) !== false) {
             $raw_keys = $line;
         }
@@ -221,15 +222,26 @@ class ProcessCSV implements ShouldQueue
 
         while(($data = fgetcsv($file)) !== false) {
             //$line is an array of the csv elements
-            $orig_data[] = array_combine($keys, $data);
+            $result[] = array_combine($keys, $data);
         }
         fclose($file);
 
-        return $orig_data;
+        return $result;
     }
 
-    public static function sql_split($file, $delimiter = ';')
-    {
+    /**
+     * Import transactions from an Excel sheet
+     * @param string $path Path to the XLSX file
+     * @return array
+     */
+    private  function importFromExcel(string $path) : array {
+        // Excel
+        $import = new TransactionsImport;
+        Excel::import($import, $path);
+        return $import->data;
+    }
+
+    public static function sql_split($file, $delimiter = ';') {
         $queries = [];
         $filtered_queries = [];
 
