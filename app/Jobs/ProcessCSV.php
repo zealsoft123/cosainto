@@ -118,7 +118,9 @@ class ProcessCSV implements ShouldQueue
                 // XLSX
                 $orig_data = [];
 
-                $orig_data = Excel::toArray(new TransactionsImport, base_path('data-ingestion') . '/data.xlsx');
+                $import = new TransactionsImport;
+                Excel::import($import, base_path('data-ingestion') . '/data.xlsx');
+                $orig_data = $import->data;
             }
 
             foreach( $txs as $tx ) {
