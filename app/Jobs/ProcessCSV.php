@@ -39,7 +39,7 @@ class ProcessCSV implements ShouldQueue
             $contents = file_get_contents(base_path('data-ingestion/insert_file_statement.csv'));
             $queries = explode("\n", $contents);
             $filtered_queries = [];
-
+//dd($queries);
             $filtered_queries[] = <<<'SQL'
                 drop table if exists base_table_temp;
                 create table base_table_temp (
@@ -139,7 +139,7 @@ SQL;
                     'transaction_id' => $tx_data[0]->txn_id,
                     'transaction_status' => $tx_data[0]->txn_status,
                     'transaction_type' => $tx_data[0]->txn_type,
-                    'amount' => $tx_data[0]->auth_amt,
+                    'amount' => $tx_data[0]->sttlmnt_amt,
                     'card_number' => $tx_data[0]->cc_number,
                     'expiration_date' => 'NA',
                     'transaction_date' => $tx_data[0]->sttlmnt_dt,
