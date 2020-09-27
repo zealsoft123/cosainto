@@ -1,5 +1,32 @@
--- adding merchant ID
-drop table if exists base_table;
+
+/* TEMP BASE TABLE WHERE FILE SHOULD BE LOADED
+drop table base_table_temp;
+create table base_table_temp (
+    txn_id varchar(100),
+    txn_type varchar(20),
+    txn_status varchar(20),
+    sttlmnt_dt DATE ,
+    auth_amt Decimal (18,2),
+    sttlmnt_amt Decimal(18,2),
+    refund_txn_id varchar(20),
+    payment_type varchar(20),
+    card_type varchar(20),
+    cc_number varchar(50),
+    billing_postal_cd varchar(20),
+    billing_country varchar(100),
+    shipping_postal_cd varchar(20),
+    shipping_country varchar(100),
+    ip_addr varchar(20),
+    processor_response_code varchar(20),
+    sttlmnt_currency varchar(20),
+    processor_type varchar(100),
+    insert_date DATE,
+    merch_id varchar(20)
+);
+*/
+
+-- MAIN TABLE NEEDS TO BE CREATED ONLY ONE TIME
+-- drop table base_table;
 create table base_table as
 (
 select 
@@ -20,9 +47,43 @@ select
     shipping_country,
     ip_addr,
     processor_response_code,
-    sttlmnt_currency
+    sttlmnt_currency,
+    processor_type,
+    insert_date
     from base_table_temp t1
 );
+
+-- AFTER ONE TIME CREATION ONLY NEW TXNS WILL BE INSERTED
+INSERT INTO base_table
+select 
+    'NA' as merch_id,
+    txn_id,
+    txn_type,
+    txn_status,
+    sttlmnt_dt,
+    auth_amt,
+    sttlmnt_amt,
+    refund_txn_id,
+    payment_type,
+    card_type,
+    cc_number,
+    billing_postal_cd,
+    billing_country,
+    shipping_postal_cd,
+    shipping_country,
+    ip_addr,
+    processor_response_code,
+    sttlmnt_currency,
+    processor_type,
+    insert_date
+    from base_table_temp t1
+    where txn_id not in 
+    (
+        SELECT 
+            txn_id
+        from base_table
+        group by txn_id
+    ); 
 
 -- INSERT INTO base_table_temp VALUES('1xcbvrpy', 'sale', 'settled', '2018-12-11', 1084.85, 1084.85, 'NA', 'Credit Card', 'Visa', '479851******0045', 13790, 'United States of America', 'NA', 'NA', '192.237.212.164', 1000.0, 'USD');
 -- INSERT INTO base_table_temp VALUES('2nk2hgjy', 'sale', 'settled', '2018-12-13', 995.42, 995.42, 'NA', 'Credit Card', 'MasterCard', '546616******2397', 28411, 'United States of America', 'NA', 'NA', '192.237.212.164', 1000.0, 'USD');
@@ -460,4 +521,27 @@ create table cos_txn_score_final as
    from base_table t1
    join cos_normalized_score t2
    on t1.txn_id = t2.txn_id
-);              
+);             
+              
+-- ONE TIME TABLE CREATION TO RETAIN PAST RUNS
+create table cos_txn_score_final_hist as 
+(
+    select 
+        t1.*,
+        DATE as score_date
+    from cos_txn_score_final
+);
+
+INSERT INTO cos_txn_score_final_hist
+    select 
+        t1.*,
+        DATE as score_date
+    from cos_txn_score_final
+    where txn_id not in 
+    (
+        select 
+            txn_id
+        from cos_txn_score_final_hist
+        group by txn_id
+    );
+              
